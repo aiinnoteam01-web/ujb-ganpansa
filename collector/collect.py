@@ -82,40 +82,47 @@ def _items(body: dict) -> tuple[list[dict], int]:
     return items or [], int(b.get("totalCount") or 0)
 
 
+WORKERS = 5  # 동시에 물어보는 쪽 수 (응답이 느린 API 라 나눠 받음)
+
+
+def log(msg: str) -> None:
+    print(msg, flush=True)  # Actions 로그에 바로 보이도록
+
+
+def paged(label: str, url: str, params, size: int, inspect: bool = False) -> list[dict]:
+    """1쪽에서 전체 건수를 보고, 나머지 쪽은 WORKERS 개씩 동시에 받습니다. 진행 상황을 로그에 찍습니다."""
+    t0 = time.time()
+    data, total = _items(get(url, params(1)).json())
+    if inspect:
+        log(f"--- {label}: 전체 {total}건, 첫 건 ---")
+        log(json.dumps(data[:1], ensure_ascii=False, indent=1))
+        return []
+    pages = max(1, min(-(-total // size), MAX_PAGES))
+    log(f"[{label}] 전체 {total}건 · {pages}쪽 · 1쪽 {time.time() - t0:.1f}초")
+    rows, done = list(data), 1
+
+    def one(page: int) -> list[dict]:
+        return _items(get(url, params(page)).json())[0]
+
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+        for got in ex.map(one, range(2, pages + 1)):
+            rows.extend(got)
+            done += 1
+            if done % 10 == 0 or done == pages:
+                log(f"[{label}] {done}/{pages}쪽 · {len(rows)}건 · {time.time() - t0:.0f}초")
+    return rows
+
+
 def fetch(sid: str, inspect: bool = False) -> list[dict]:
     _, url = SOURCES[sid]
-    rows, page = [], 1
-    while page <= MAX_PAGES:
-        body = get(url, {"serviceKey": key(), "pageNo": page, "numOfRows": PAGE_SIZE, "returnType": "json",
-                         "cond[LOTNO_ADDR::LIKE]": REGION["lotno_like"]}).json()
-        data, total = _items(body)
-        if inspect:
-            print(f"--- {sid}: 전체 {total}건, 첫 건 ---")
-            print(json.dumps(data[:1], ensure_ascii=False, indent=1))
-            return []
-        rows.extend(data)
-        if not data or len(rows) >= total:
-            break
-        page += 1
-        time.sleep(0.15)
-    return rows
+    return paged(SOURCE_NAMES[sid], url, lambda page: {
+        "serviceKey": key(), "pageNo": page, "numOfRows": PAGE_SIZE, "returnType": "json",
+        "cond[LOTNO_ADDR::LIKE]": REGION["lotno_like"]}, PAGE_SIZE, inspect)
 
 
 def fetch_semas(inspect: bool = False) -> list[dict]:
-    rows, page = [], 1
-    while page <= 60:
-        body = get(semas.URL, {"serviceKey": key(), **semas.params(page)}).json()
-        data, total = _items(body)
-        if inspect:
-            print(f"--- 상가정보: 전체 {total}건, 첫 건 ---")
-            print(json.dumps(data[:1], ensure_ascii=False, indent=1))
-            return []
-        rows.extend(data)
-        if not data or len(rows) >= total:
-            break
-        page += 1
-        time.sleep(0.15)
-    return rows
+    return paged("상가정보", semas.URL, lambda page: {"serviceKey": key(), **semas.params(page)}, semas.PAGE_SIZE, inspect)
 
 
 def main() -> int:
