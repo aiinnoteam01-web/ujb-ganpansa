@@ -1,0 +1,24 @@
+name: inspect
+
+# 처음 연결할 때 한 번 씁니다. Actions 탭 → inspect → Run workflow.
+# 인허가 API 3곳과 상가정보에 한 건씩만 물어보고, 응답의 실제 필드명과 전체 건수를 로그에 보여 줍니다.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r collector/requirements.txt
+      - name: 응답 필드명 확인
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+        working-directory: collector
+        run: python collect.py --inspect
