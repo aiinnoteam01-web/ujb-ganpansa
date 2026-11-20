@@ -54,16 +54,17 @@ def safe(e: Exception) -> str:
     return re.sub(r"(serviceKey|key)=[^&\s')]+", r"\1=***", str(e))
 
 
-def get(url: str, params: dict) -> requests.Response:
-    for attempt in range(3):
+def get(url: str, params: dict, tries: int = 4) -> requests.Response:
+    """느린 쪽(일반음식점은 한 쪽에 10~40초)도 버티도록 읽기 90초, 4번까지 다시 시도."""
+    for attempt in range(tries):
         try:
-            r = requests.get(url, params=params, headers=UA, timeout=40)
+            r = requests.get(url, params=params, headers=UA, timeout=(10, 90))
             r.raise_for_status()
             return r
         except requests.RequestException:
-            if attempt == 2:
+            if attempt == tries - 1:
                 raise
-            time.sleep(3 * (attempt + 1))
+            time.sleep(5 * (attempt + 1))
     raise AssertionError
 
 
@@ -101,16 +102,28 @@ def paged(label: str, url: str, params, size: int, inspect: bool = False) -> lis
     log(f"[{label}] 전체 {total}건 · {pages}쪽 · 1쪽 {time.time() - t0:.1f}초")
     rows, done = list(data), 1
 
-    def one(page: int) -> list[dict]:
-        return _items(get(url, params(page)).json())[0]
+    failed: list[int] = []
+
+    def one(page: int):
+        try:
+            return page, _items(get(url, params(page)).json())[0]
+        except Exception:
+            return page, None  # 한 쪽이 끝내 안 오면 나중에 혼자 다시 받음
 
     from concurrent.futures import ThreadPoolExecutor
     with ThreadPoolExecutor(max_workers=WORKERS) as ex:
-        for got in ex.map(one, range(2, pages + 1)):
-            rows.extend(got)
+        for page, got in ex.map(one, range(2, pages + 1)):
+            if got is None:
+                failed.append(page)
+            else:
+                rows.extend(got)
             done += 1
             if done % 10 == 0 or done == pages:
-                log(f"[{label}] {done}/{pages}쪽 · {len(rows)}건 · {time.time() - t0:.0f}초")
+                log(f"[{label}] {done}/{pages}쪽 · {len(rows)}건 · {time.time() - t0:.0f}초" + (f" · 다시 받을 쪽 {len(failed)}" if failed else ""))
+    for page in failed:  # 동시 요청을 멈추고 한 쪽씩 천천히 다시
+        time.sleep(3)
+        rows.extend(_items(get(url, params(page), tries=5).json())[0])  # 그래도 실패하면 출처 전체를 이전 자료로
+        log(f"[{label}] {page}쪽 다시 받음")
     return rows
 
 
