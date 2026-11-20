@@ -1,31 +1,32 @@
 {
- "updated_at": "2026-11-20T17:29+09:00",
+ "updated_at": "2026-11-20T17:57+09:00",
  "sources": {
   "restaurant": {
    "name": "일반음식점",
-   "ok": false,
-   "error": "HTTPSConnectionPool(host='apis.data.go.kr', port=443): Read timed out. (read timeout=40)",
-   "kept": 0
+   "ok": true,
+   "fetched": 18564,
+   "temporary_skipped": 94,
+   "seconds": 857.0
   },
   "rest": {
    "name": "휴게음식점(카페·편의점)",
    "ok": true,
    "fetched": 4298,
    "temporary_skipped": 386,
-   "seconds": 64.8
+   "seconds": 57.7
   },
   "bakery": {
    "name": "제과점",
    "ok": true,
    "fetched": 515,
    "temporary_skipped": 42,
-   "seconds": 2.5
+   "seconds": 4.0
   },
   "semas": {
    "name": "상가정보(소상공인)",
    "ok": true,
    "fetched": 20601,
-   "seconds": 17.8
+   "seconds": 20.9
   }
  }
 }
