@@ -56,3 +56,27 @@ def test_error_text_hides_key():
     import collect
     msg = collect.safe(Exception("GET /info?serviceKey=abc%2Bdef&pageNo=1 failed"))
     assert "abc" not in msg and "serviceKey=***" in msg
+
+
+def test_real_response_2026_11():
+    """2026-11-20 inspect 로 받은 실제 응답 모양."""
+    rec = {"BPLC_NM": "고+고", "BZSTAT_SE_NM": "한식", "CLSBIZ_YMD": "", "LCPMT_YMD": "2026-11-18",
+           "LOTNO_ADDR": "경기도 의정부시 의정부동 214-90 103호",
+           "ROAD_NM_ADDR": "경기도 의정부시 태평로 131, 지상1층 103호 (의정부동)",
+           "CRD_INFO_X": "204430.368404873", "CRD_INFO_Y": "471291.234656134", "SALS_STTS_NM": "영업/정상"}
+    r = n.normalize("restaurant", "일반음식점", rec)
+    assert r["open"] == "2026-11-18" and r["close"] is None and r["type"] == "한식"
+    assert n.site_key(r["lotno"], r["road"]) == ("의정부동 214-90 1층103호", "의정부동", True)
+    if r["lat"]:
+        assert 37.6 < r["lat"] < 37.9 and 126.9 < r["lng"] < 127.2
+
+
+def test_temporary_popup_skipped():
+    assert n.is_temporary("메종원스이어(한시적)") and not n.is_temporary("메종원스이어")
+
+
+def test_semas_real_shape():
+    import semas
+    r = semas.normalize({"bizesNm": "PENIEL", "indsSclsNm": "시계/귀금속 소매업", "lnoAdr": "경기도 의정부시 의정부동 132-39",
+                         "rdnmAdr": "경기도 의정부시 시민로 132-1", "flrNo": "", "hoNo": "", "lon": 127.0497, "lat": 37.7379})
+    assert n.site_key(r["lotno"], r["road"]) == ("의정부동 132-39", "의정부동", False)
