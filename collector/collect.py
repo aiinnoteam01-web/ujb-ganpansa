@@ -20,7 +20,7 @@ import yaml
 
 import semas
 from history import build
-from normalize import normalize
+from normalize import is_temporary, normalize
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
@@ -148,10 +148,12 @@ def main() -> int:
         try:
             raw = fetch(sid)
             rows = [normalize(sid, category, r) for r in raw]
+            temp = sum(is_temporary(r["name"]) for r in rows)
+            rows = [r for r in rows if not is_temporary(r["name"])]
             if not rows:
                 raise RuntimeError("0건 (필터·주소 확인 필요)")
             records.extend(rows)
-            status[sid] = {"name": SOURCE_NAMES[sid], "ok": True, "fetched": len(rows),
+            status[sid] = {"name": SOURCE_NAMES[sid], "ok": True, "fetched": len(rows), "temporary_skipped": temp,
                            "seconds": round(time.time() - started, 1)}
         except Exception as e:  # 한 출처 실패가 전체를 멈추지 않게
             old = [r for r in previous if r.get("source") == sid]

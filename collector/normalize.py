@@ -18,7 +18,7 @@ TYPES: dict[str, list[str]] = yaml.safe_load((RULES / "types.yaml").read_text(en
 
 FIELDS = {
     "name":   ["BPLC_NM", "bplcNm"],
-    "uptae":  ["BZSTAT_SE_NM", "UPTAE_NM", "uptaeNm", "SNTT_BZSTAT_NM"],
+    "uptae":  ["BZSTAT_SE_NM", "SNTTN_BZSTAT_NM", "UPTAE_NM", "uptaeNm"],
     "open":   ["LCPMT_YMD", "apvPermYmd"],
     "close":  ["CLSBIZ_YMD", "dcbYmd"],
     "status": ["SALS_STTS_NM", "trdStateNm"],
@@ -89,6 +89,11 @@ def site_key(lotno: str | None, road: str | None) -> tuple[str | None, str | Non
     fl, ho = FLOOR_RE.search(detail), HO_RE.search(detail)
     unit = (fl.group(1).replace(" ", "") + "층" if fl else "") + (ho.group(1) + "호" if ho else "")
     return f"{dong} {lot}" + (f" {unit}" if unit else ""), dong, bool(unit)
+
+
+def is_temporary(name: str) -> bool:
+    """백화점 팝업처럼 '(한시적)' 영업은 자리 내력에서 뺍니다 (몇 주 단위로 바뀌어 '자주 바뀐 자리'를 왜곡)."""
+    return "한시적" in (name or "")
 
 
 def normalize(source: str, category: str, rec: dict) -> dict:
