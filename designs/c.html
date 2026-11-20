@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>의정부 자리모아 · 시안 C 동네 현황판</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&amp;display=swap">
+<link rel="stylesheet" href="base.css">
+<style>
+/* 시안 C · 동네 현황판 — 동네별 '주의 자리 비율'을 먼저 보고, 동네를 눌러 자리로 내려가는 구조 */
+:root { --ink: #102033; --ink-2: #44546a; --ink-3: #5f6e80; --bg: #eef2f7; --card: #fff; --line: #d9e1ea; --soft: #f1f5fa;
+  --gov: #1f4e8c; --link: #1f4e8c; --focus: #1f4e8c; --radius: 14px; --font: "Noto Sans KR", sans-serif; }
+body { font-family: var(--font); background: var(--bg); color: var(--ink); font-size: 16px; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.site-header { background: var(--gov); color: #fff; }
+.header-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding-top: 18px; padding-bottom: 18px; }
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-mark { width: 40px; height: 40px; border-radius: 10px; background: #fff; color: var(--gov); display: grid; place-items: center; font-weight: 800; font-size: 18px; }
+.logo-name { font-weight: 800; font-size: 22px; }
+.logo-sub { display: block; font-size: 13px; color: #c9d8ee; }
+.updated { margin: 0 0 0 auto; font-size: 13px; color: #c9d8ee; }
+main.wrap { padding-top: 22px; padding-bottom: 60px; display: flex; flex-direction: column; gap: 18px; }
+#tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.tile { background: var(--card); border-radius: var(--radius); padding: 16px 18px; box-shadow: 0 1px 2px rgba(16,32,51,.06), inset 0 0 0 1px var(--line); }
+.tile:hover { box-shadow: inset 0 0 0 2px var(--gov); }
+.tile-label { font-size: 14px; color: var(--ink-2); font-weight: 700; }
+.tile-num { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.t4 .tile-num { color: #b42323; }
+.panel { background: var(--card); border-radius: var(--radius); padding: 18px 20px; box-shadow: inset 0 0 0 1px var(--line); }
+.panel h2 { margin: 0 0 4px; font-size: 18px; }
+.panel .muted { margin: 0 0 12px; }
+.scale { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-3); margin-bottom: 12px; }
+.scale span.r { display: inline-flex; }
+.scale span.r i { width: 22px; height: 10px; }
+.s1 { background: #e6f0fc; } .s2 { background: #b7d3f6; } .s3 { background: #86b6ef; } .s4 { background: #5598e7; } .s5 { background: #2a78d6; } .s6 { background: #1c5cab; }
+#dongs { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.search-form { background: var(--soft); border-radius: 12px; padding: 6px 6px 6px 14px; box-shadow: inset 0 0 0 1.5px var(--line); }
+.search-form:focus-within { box-shadow: inset 0 0 0 2px var(--gov); }
+.search-form input { font-size: 17px; padding: 8px 0; }
+.search-btn { border: 0; background: var(--gov); color: #fff; font-weight: 700; padding: 11px 24px; border-radius: 9px; cursor: pointer; font-size: 16px; }
+.ex { border: 0; background: var(--soft); border-radius: 99px; padding: 7px 14px; font-size: 14px; color: var(--ink-2); }
+.ex:hover { background: #dce8f7; }
+#filters { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.f-title { font-size: 15px; }
+.f-chip { border: 0; background: var(--soft); border-radius: 8px; padding: 8px 14px; font-size: 15px; min-height: 40px; }
+.f-chip[aria-pressed="true"] { background: var(--gov); color: #fff; }
+.list-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.list-head h2 { margin: 0; font-size: 20px; }
+#count { font-weight: 800; color: var(--gov); font-size: 18px; }
+#cond { color: var(--ink-3); font-size: 14px; }
+#list { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 10px; }
+.item { background: var(--card); border-radius: var(--radius); padding: 16px 18px; box-shadow: inset 0 0 0 1px var(--line); }
+.item:hover, .item:focus-visible { box-shadow: inset 0 0 0 2px var(--gov); }
+.more { grid-column: 1 / -1; border: 0; background: var(--gov); color: #fff; border-radius: 10px; padding: 13px 26px; font-weight: 700; font-size: 16px; }
+.site-footer { padding: 6px 0 36px; font-size: 13px; color: var(--ink-3); }
+@media (max-width: 860px) { #tiles { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<header class="site-header"><div class="wrap header-row">
+  <div class="logo"><span class="logo-mark" aria-hidden="true">자</span><span><span class="logo-name">의정부 자리모아</span><span class="logo-sub">동네별 점포 자리 현황판</span></span></div>
+  <p class="updated" id="updated">불러오는 중…</p>
+</div></header>
+<main class="wrap">
+  <section id="tiles" aria-label="한눈에 보기"></section>
+  <section class="panel" aria-labelledby="dong-title">
+    <h2 id="dong-title">동네별 주의 자리 비율</h2>
+    <p class="muted">색이 진할수록 가게가 자주 바뀐 '주의' 자리가 많은 동네입니다. 동네를 누르면 아래 목록이 그 동네로 바뀝니다.</p>
+    <div class="scale" aria-hidden="true">낮음 <span class="r"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i><i class="s5"></i><i class="s6"></i></span> 높음</div>
+    <div id="dongs" role="group" aria-label="동네 선택"></div>
+  </section>
+  <section class="panel" aria-label="검색과 조건"><div id="search"></div><div id="filters"></div></section>
+  <div class="list-head"><h2>점포 자리</h2><span id="count"></span><span id="cond"></span></div>
+  <section id="list" aria-live="polite"></section>
+</main>
+<footer class="site-footer wrap"><p id="source-note"></p><p>의정부시 공식 사이트가 아닙니다. 주의도는 참고 지표이며, 계약 전에는 현장과 건축물대장을 꼭 확인하세요.</p></footer>
+<dialog id="detail" aria-labelledby="d-title"></dialog>
+<script>window.DESIGN = { list: "cards", filterStyle: "chips", hideDongChips: true, closed: "#86b6ef", active: "#1f4e8c", cmpHi: "#1f4e8c", cmpLo: "#cddcf0", grid: "#eef2f7", ink: "#102033", ink2: "#44546a" };</script>
+<script src="core.js"></script>
+</body>
+</html>

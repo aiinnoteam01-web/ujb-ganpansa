@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>의정부 자리모아 · 시안 A 자리 이력서</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;800&amp;family=Noto+Sans+KR:wght@400;500;700&amp;display=swap">
+<link rel="stylesheet" href="base.css">
+<style>
+/* 시안 A · 자리 이력서 — 서류·장부 느낌. 종이색 바탕, 먹색 글자, 도장색 강조 */
+:root { --pin: #23344d; --ink: #1f1d1a; --ink-2: #4d4842; --ink-3: #6f685f; --bg: #f7f4ee; --card: #fffdf9; --line: #e4ddd1; --soft: #f3eee5;
+  --stamp: #b8322a; --navy: #23344d; --link: #23344d; --focus: #23344d; --radius: 6px;
+  --serif: "Noto Serif KR", serif; --font: "Noto Sans KR", sans-serif; }
+body { font-family: var(--font); background: var(--bg); color: var(--ink); font-size: 15.5px; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.site-header { border-bottom: 2px solid var(--ink); }
+.header-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px; padding-top: 26px; padding-bottom: 14px; }
+.logo { display: flex; align-items: center; gap: 12px; }
+.seal { width: 44px; height: 44px; border: 2.5px solid var(--stamp); color: var(--stamp); border-radius: 50%; display: grid; place-items: center; font-family: var(--serif); font-weight: 800; font-size: 18px; transform: rotate(-8deg); }
+.logo-name { font-family: var(--serif); font-weight: 800; font-size: 26px; letter-spacing: -.5px; }
+.logo-sub { display: block; font-size: 13px; color: var(--ink-3); }
+.updated { margin: 0; font-size: 13px; color: var(--ink-3); }
+main.wrap { display: flex; flex-direction: column; gap: 22px; padding-top: 26px; padding-bottom: 56px; }
+.lead { font-family: var(--serif); font-weight: 600; font-size: 22px; margin: 0; letter-spacing: -.3px; }
+#tiles { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.tile { background: none; padding: 14px 16px; border-right: 1px solid var(--line); border-radius: 0; }
+.tile:last-child { border-right: 0; }
+.tile:hover { background: var(--soft); }
+.tile-label { font-size: 13px; color: var(--ink-2); }
+.tile-num { font-family: var(--serif); font-weight: 800; font-size: 28px; font-variant-numeric: tabular-nums; }
+.t4 .tile-num { color: var(--stamp); }
+.search-form { background: var(--card); border: 1.5px solid var(--ink); border-radius: var(--radius); padding: 6px 6px 6px 14px; }
+.search-form input { font-size: 17px; padding: 8px 0; }
+.search-btn { border: 0; background: var(--navy); color: #fff; font-weight: 700; padding: 10px 24px; border-radius: 4px; cursor: pointer; }
+.ex { border: 1px solid var(--line); background: var(--card); border-radius: 4px; padding: 5px 11px; font-size: 13.5px; color: var(--ink-2); }
+.ex:hover { border-color: var(--ink); color: var(--ink); }
+#filters { display: flex; flex-direction: column; gap: 8px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.f-title { font-size: 14px; color: var(--ink-2); font-weight: 700; }
+.f-chip { border: 0; background: none; padding: 5px 9px; font-size: 14.5px; color: var(--ink-2); border-radius: 4px; }
+.f-chip:hover { background: var(--soft); }
+.f-chip[aria-pressed="true"] { color: var(--ink); font-weight: 700; box-shadow: inset 0 -2px 0 var(--stamp); border-radius: 0; }
+.list-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.list-head h2 { margin: 0; font-family: var(--serif); font-size: 21px; }
+#count { font-weight: 700; color: var(--stamp); }
+#cond { color: var(--ink-3); font-size: 13.5px; }
+#list { display: flex; flex-direction: column; border-top: 2px solid var(--ink); }
+.row { padding: 14px 6px; border-bottom: 1px solid var(--line); }
+.row:hover, .row:focus-visible { background: var(--card); }
+.row h3 { font-family: var(--serif); font-size: 17px; }
+.badge { border-radius: 3px; }
+.risk-bad { background: none; color: var(--stamp); box-shadow: inset 0 0 0 1.5px var(--stamp); }
+.risk-mid { background: none; color: #8a5a00; box-shadow: inset 0 0 0 1.5px #c99a3a; }
+.risk-good { background: none; color: #1f6b33; box-shadow: inset 0 0 0 1.5px #5e9c6c; }
+.more { margin-top: 16px; border: 1.5px solid var(--ink); background: var(--card); border-radius: 4px; padding: 11px 26px; font-weight: 700; }
+.dong-panel { display: flex; flex-direction: column; gap: 12px; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.panel-head h2 { margin: 0; font-family: var(--serif); font-size: 21px; }
+.panel-head .muted { margin: 0; }
+.scale { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-3); }
+.scale .r { display: inline-flex; } .scale i { width: 20px; height: 10px; }
+.s1 { background: #f7e7e3; } .s2 { background: #efcac3; } .s3 { background: #e3a69c; } .s4 { background: #cf7a6e; } .s5 { background: #b8322a; } .s6 { background: #8a231d; }
+#dongs { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--ink); border-left: 1px solid var(--line); }
+.dong { border-radius: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 12px 14px; gap: 1px; }
+.dong[aria-pressed="true"] { outline: 3px solid var(--ink); outline-offset: -3px; }
+.dong-name { font-size: 15px; }
+.dong-rate { font-family: var(--serif); font-size: 24px; }
+.dong-meta { font-size: 12.5px; }
+.d-map { background: #fbf8f2; }
+dialog#detail { border: 1px solid var(--ink); box-shadow: 8px 8px 0 rgba(31, 29, 26, .12); }
+dialog#detail .d-head { border-bottom: 2px solid var(--ink); padding-bottom: 10px; }
+dialog#detail h2, dialog h3 { font-family: var(--serif); }
+.d-kicker { color: var(--stamp); font-weight: 700; }
+.d-tiles div { border-radius: 4px; }
+.site-footer { border-top: 1px solid var(--line); padding: 16px 0 36px; font-size: 12.5px; color: var(--ink-3); }
+@media (max-width: 760px) { #tiles, #dongs { grid-template-columns: repeat(2, 1fr); } .tile { border-bottom: 1px solid var(--line); } .scale { margin-left: 0; } }
+</style>
+</head>
+<body>
+<header class="site-header"><div class="wrap header-row">
+  <div class="logo"><span class="seal" aria-hidden="true">자</span><span><span class="logo-name">의정부 자리모아</span><span class="logo-sub">점포 자리마다 이력서를 떼어 봅니다</span></span></div>
+  <p class="updated" id="updated">불러오는 중…</p>
+</div></header>
+<main class="wrap">
+  <p class="lead">계약하기 전에, 그 자리를 거쳐 간 가게부터 확인하세요.</p>
+  <section id="tiles" aria-label="한눈에 보기"></section>
+  <section class="dong-panel" aria-labelledby="dong-title">
+    <div class="panel-head"><h2 id="dong-title">동네별 주의 자리 비율</h2>
+      <p class="muted">법정동 13곳 · 주의 자리 수 ÷ 전체 자리 수. 칸을 누르면 아래 장부가 그 동네로 바뀝니다.</p>
+      <div class="scale" aria-hidden="true">낮음 <span class="r"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i><i class="s5"></i><i class="s6"></i></span> 높음</div></div>
+    <div id="dongs" role="group" aria-label="동네 선택"></div>
+  </section>
+  <section id="search" aria-label="검색"></section>
+  <section id="filters" aria-label="조건"></section>
+  <div class="list-head"><h2>자리 장부</h2><span id="count"></span><span id="cond"></span></div>
+  <section id="list" aria-live="polite"></section>
+</main>
+<footer class="site-footer wrap"><p id="source-note"></p><p>의정부시 공식 사이트가 아닙니다. 주의도는 인허가 기록으로 계산한 참고 지표이며, 계약 전에는 현장과 건축물대장을 꼭 확인하세요.</p></footer>
+<dialog id="detail" aria-labelledby="d-title"></dialog>
+<script>window.DESIGN = { list: "ledger", filterStyle: "chips", ramp: ["#f7e7e3", "#efcac3", "#e3a69c", "#cf7a6e", "#b8322a", "#8a231d"], mapOwn: "#fff3e6", mapOther: "#efebe4", mapLine: "#cbc3b6", mapPin: "#23344d", closed: "#b9b0a2", active: "#23344d", cmpHi: "#23344d", cmpLo: "#d6dbe3", grid: "#ece6dc", ink: "#1f1d1a", ink2: "#4d4842" };</script>
+<script src="core.js"></script>
+</body>
+</html>

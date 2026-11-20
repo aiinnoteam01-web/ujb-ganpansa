@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://api.vworld.kr https://xdworld.vworld.kr; connect-src 'self'; base-uri 'self'; form-action 'self'">
+<meta name="description" content="의정부시 점포 자리마다 어떤 가게가 몇 번 열고 닫았는지, 간판이 바뀌어 온 내력을 인허가 기록으로 보여 줍니다.">
+<title>의정부 간판사</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Brush+Script&amp;family=Song+Myung&amp;family=Gowun+Batang:wght@400;700&amp;display=swap">
+<link rel="stylesheet" href="lib/leaflet.css">
+<link rel="stylesheet" href="app.css">
+<script src="lib/leaflet.js" defer></script>
+<script src="config.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="site-header"><div class="wrap header-row">
+  <h1 class="title-v"><span class="city">의정부</span><span class="name">간판사</span><span class="seal" aria-hidden="true">간판<br>내력</span></h1>
+  <div class="lead-box">
+    <p class="lead">간판이 바뀌어 온 자리,<br>그 내력을 읽습니다</p>
+    <p class="lead-sub">계약하기 전에, 그 자리를 거쳐 간 가게부터 살피세요.</p>
+    <p class="updated" id="updated">불러오는 중…</p>
+  </div>
+</div></header>
+<main class="wrap">
+  <section id="tiles" aria-label="한눈에 보기"></section>
+  <section class="dong-panel" aria-labelledby="dong-title">
+    <div class="panel-head"><h2 id="dong-title">동네별 주의 자리 비율</h2>
+      <p class="muted">법정동 13곳 · 주의 자리 수 ÷ 전체 자리 수. 먹이 짙을수록 비율이 높습니다.</p>
+      <div class="scale" aria-hidden="true">옅음 <span class="r"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i><i class="s5"></i><i class="s6"></i></span> 짙음</div></div>
+    <div id="dongs" role="group" aria-label="동네 선택"></div>
+  </section>
+  <section id="search" aria-label="검색"></section>
+  <section id="filters" aria-label="조건"></section>
+  <div class="list-head"><h2>자리 장부</h2><span id="count"></span><span id="cond"></span></div>
+  <section id="list" aria-live="polite"></section>
+</main>
+<footer class="site-footer wrap"><p id="source-note"></p><p>의정부시 공식 사이트가 아닙니다. 주의도는 인허가 기록으로 계산한 참고 지표이며, 계약 전에는 현장과 건축물대장을 꼭 확인하세요.</p></footer>
+<dialog id="detail" aria-labelledby="d-title"></dialog>
+</body>
+</html>
