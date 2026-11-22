@@ -1,32 +1,32 @@
 {
- "updated_at": "2026-11-21T10:35+09:00",
+ "updated_at": "2026-11-22T11:25+09:00",
  "sources": {
   "restaurant": {
    "name": "일반음식점",
    "ok": true,
-   "fetched": 18564,
-   "temporary_skipped": 94,
-   "seconds": 1323.1
+   "fetched": 18465,
+   "temporary_skipped": 95,
+   "seconds": 4525.0
   },
   "rest": {
    "name": "휴게음식점(카페·편의점)",
    "ok": true,
    "fetched": 4298,
    "temporary_skipped": 386,
-   "seconds": 55.3
+   "seconds": 67.2
   },
   "bakery": {
    "name": "제과점",
    "ok": true,
-   "fetched": 515,
+   "fetched": 516,
    "temporary_skipped": 42,
-   "seconds": 3.4
+   "seconds": 4.9
   },
   "semas": {
    "name": "상가정보(소상공인)",
    "ok": true,
    "fetched": 20601,
-   "seconds": 32.4
+   "seconds": 31.8
   }
  }
 }
