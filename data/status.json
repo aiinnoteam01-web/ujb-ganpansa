@@ -1,32 +1,37 @@
 {
- "updated_at": "2026-11-23T12:13+09:00",
+ "updated_at": "2026-11-23T14:27+09:00",
  "sources": {
   "restaurant": {
    "name": "일반음식점",
-   "ok": true,
-   "fetched": 18169,
-   "temporary_skipped": 91,
-   "seconds": 6930.5
+   "ok": false,
+   "error": "504 Server Error: Gateway Timeout for url: https://apis.data.go.kr/1741000/general_restaurants/info?serviceKey=***&pageNo=1&numOfRows=100&returnType=json&cond%5BLOTNO_ADDR%3A%3ALIKE%5D=%EA%B2%BD%EA%B8",
+   "kept": 18169
   },
   "rest": {
    "name": "휴게음식점(카페·편의점)",
    "ok": true,
    "fetched": 4298,
    "temporary_skipped": 386,
-   "seconds": 133.7
+   "seconds": 365.6
   },
   "bakery": {
    "name": "제과점",
    "ok": true,
    "fetched": 516,
    "temporary_skipped": 42,
-   "seconds": 9.8
+   "seconds": 6.6
   },
   "semas": {
    "name": "상가정보(소상공인)",
    "ok": true,
    "fetched": 20601,
-   "seconds": 58.6
+   "seconds": 36.6
+  },
+  "bjd": {
+   "name": "법정동 경계(브이월드)",
+   "ok": false,
+   "error": "_from_data_api: 502 Server Error: Bad Gateway for url: https://api.vworld.kr/req/data?service=data&request=GetFeature&data=LT_C_ADEMD_INFO&key=***&domain=https%3A%2F%2Faiinnoteam01-web.github.io&attrFilter=emdCd%3Alike%3A41150&geometry=true&attribute=true&crs=EPSG%3A4326&format=json&size=100&page=1 ",
+   "kept": 0
   }
  }
 }
