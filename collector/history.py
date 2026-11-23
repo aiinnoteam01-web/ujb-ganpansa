@@ -52,13 +52,13 @@ def risk_level(hist: list[dict], today: date) -> str:
     n = len(closed)
     avg = statistics.mean(h["months"] for h in closed) if closed else None
     recent = sum(1 for h in closed if (today - _d(h["close"])).days <= RISK["recent_days"])
-    bad, mid = RISK["주의"], RISK["보통"]
+    bad, mid = RISK["자주 바뀜"], RISK["보통"]
     if n >= bad["closed_at_least"] or (n >= 2 and avg is not None and avg < bad["closed_2_and_avg_under"]) \
             or recent >= bad["recent_closed_at_least"]:
-        return "주의"
+        return "자주 바뀜"
     if n >= mid["closed_at_least"] or (avg is not None and avg < mid["avg_under"]):
         return "보통"
-    return "양호"
+    return "오래 유지"
 
 
 def attach_stores(sites: list[dict], stores: list[dict]) -> None:
@@ -115,7 +115,7 @@ def build(records: list[dict], today: date | None = None, source_label: str = ""
     for key in sorted(groups):
         hist = sorted(groups[key], key=lambda h: h["open"])
         # 같은 '자리'에 동시에 3곳 이상 영업한 적이 있으면 백화점·마트·휴게소처럼 여러 가게가 함께 있는 곳
-        # → 한 자리의 간판 교체로 볼 수 없어 자리 비교(주의도·순위)에서 뺌
+        # → 한 자리의 간판 교체로 볼 수 없어 자리 비교(교체 빈도·순위)에서 뺌
         addr = f"{place[key]['road']} {place[key]['lotno']}"
         if max_concurrent(hist, t) >= MULTI_AT or any(w in addr for w in REGION.get("multi_words", [])):
             multi.append(key)

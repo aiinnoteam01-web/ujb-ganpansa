@@ -115,7 +115,7 @@ def fetch(dongs: list[str]) -> list[dict]:
         try:
             feats = how(key)
         except Exception as e:  # 다음 방법으로
-            errors.append(f"{how.__name__}: {e}")
+            errors.append(f"{how.__name__}: {str(e)[:110]}")
             continue
         out = {}
         for f in feats:

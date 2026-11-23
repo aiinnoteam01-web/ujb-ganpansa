@@ -32,12 +32,12 @@ def test_vacant():
 
 def test_risk_bad_when_four_closures():
     rs = [rec(f"X{i}", f"{2017 + i * 2}-01-01", f"{2018 + i * 2}-06-01") for i in range(4)]
-    assert h.build(rs, today=TODAY)["sites"][0]["risk"] == "주의"
+    assert h.build(rs, today=TODAY)["sites"][0]["risk"] == "자주 바뀜"
 
 
 def test_risk_good_long_runner():
     d = h.build([rec("오래", "2012-01-01", None)], today=TODAY)
-    assert d["sites"][0]["risk"] == "양호"
+    assert d["sites"][0]["risk"] == "오래 유지"
 
 
 def test_bad_dates_dropped():

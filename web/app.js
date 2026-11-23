@@ -18,13 +18,13 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
   const DONGS = ["의정부동", "호원동", "장암동", "신곡동", "용현동", "민락동", "낙양동", "자일동", "금오동", "가능동", "녹양동", "고산동", "산곡동"];
   const TYPES = ["카페", "한식", "치킨", "분식", "주점", "양식", "중식", "일식", "베이커리", "편의점"];
   const RISK = {
-    주의: { cls: "risk-bad", icon: "▲", desc: "최근 10년 사이 가게가 자주 바뀐 자리" },
+    "자주 바뀜": { cls: "risk-bad", icon: "▲", desc: "최근 10년 사이 가게가 자주 바뀐 자리" },
     보통: { cls: "risk-mid", icon: "●", desc: "몇 번 바뀌었지만 평균 수준" },
-    양호: { cls: "risk-good", icon: "■", desc: "한 가게가 오래 운영된 편" },
+    "오래 유지": { cls: "risk-good", icon: "■", desc: "한 가게가 오래 운영된 편" },
   };
   const SORTS = { closed_desc: "자주 바뀐 순", avg_desc: "오래 버틴 순", vacant_long: "공실 오래된 순", recent: "최근 폐업 순" };
-  // 지도 색 — 주의·보통·양호는 모양+색, 이 자리는 보라 핀, 경계선은 법정동 자주 실선 / 행정동 파랑 점선
-  const RCOL = { 주의: "#e03131", 보통: "#f08c00", 양호: "#2f9e44" };
+  // 지도 색 — 자주 바뀜·보통·오래 유지는 모양+색, 이 자리는 보라 핀, 경계선은 법정동 자주 실선 / 행정동 파랑 점선
+  const RCOL = { "자주 바뀜": "#e03131", 보통: "#f08c00", "오래 유지": "#2f9e44" };
   const LINE = { bjd: "#d6336c", adm: "#1c7ed6" };
   const PINC = "#5f3dc4";
   const PAGE = 30;
@@ -90,7 +90,7 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
       ["점포 자리", s.length, "곳", { ...BLANK }],
       ["지금 영업 중", s.filter((x) => x.stats.current).length, "곳", { ...BLANK, sort: "avg_desc" }],
       ["공실 추정", s.filter(isVac).length, "곳", { ...BLANK, vacant: true, sort: "vacant_long" }],
-      ["주의 자리", s.filter((x) => x.risk === "주의").length, "곳", { ...BLANK, risk: "주의" }],
+      ["자주 바뀐 자리", s.filter((x) => x.risk === "자주 바뀜").length, "곳", { ...BLANK, risk: "자주 바뀜" }],
       ["최근 1년 폐업", s.reduce((n, x) => n + x.history.filter((y) => y.close && y.close >= yearAgo).length, 0), "건", { ...BLANK, sort: "recent" }],
     ];
     box.replaceChildren(...tiles.map(([label, n, unit, patch], i) => h("button", { class: `tile t${i + 1}`, type: "button", onclick: () => { if ($("#qtext")) $("#qtext").value = ""; set(patch); } },
@@ -102,18 +102,18 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
     const box = $("#dongs"); if (!box) return;
     const rows = DONGS.map((d) => {
       const ss = DATA.sites.filter((s) => s.dong === d), closed = ss.flatMap((s) => s.history.filter((x) => x.close));
-      return { d, n: ss.length, bad: ss.filter((s) => s.risk === "주의").length, avg: closed.length ? closed.reduce((a, x) => a + x.months, 0) / closed.length : null, vac: ss.filter(isVac).length };
+      return { d, n: ss.length, bad: ss.filter((s) => s.risk === "자주 바뀜").length, avg: closed.length ? closed.reduce((a, x) => a + x.months, 0) / closed.length : null, vac: ss.filter(isVac).length };
     }).filter((r) => r.n);
     const rates = rows.map((r) => r.bad / r.n), lo = Math.min(...rates), hi = Math.max(...rates);
     const step = (v) => Math.min(CFG.ramp.length - 1, Math.floor(((v - lo) / ((hi - lo) || 1)) * CFG.ramp.length));
     box.replaceChildren(...rows.map((r) => {
       const k = step(r.bad / r.n), dark = k >= (CFG.darkFrom ?? 4), pct = ((r.bad / r.n) * 100).toFixed(1);
       const bar = CFG.dongAscii ? h("span", { class: "dong-bar", "aria-hidden": "true" }, "█".repeat(Math.round((r.bad / r.n) * 20)) + "░".repeat(20 - Math.round((r.bad / r.n) * 20))) : null;
-      return h("button", { type: "button", class: "dong", "aria-pressed": String(q.dong === r.d), "aria-label": `${r.d}: 주의 자리 ${r.bad}곳, 전체 ${r.n}곳 중 ${pct}%`,
+      return h("button", { type: "button", class: "dong", "aria-pressed": String(q.dong === r.d), "aria-label": `${r.d}: 자주 바뀐 자리 ${r.bad}곳, 전체 ${r.n}곳 중 ${pct}%`,
         style: CFG.dongAscii ? "" : `background:${CFG.ramp[k]};color:${dark ? "#fff" : CFG.ink}`, onclick: () => set({ dong: q.dong === r.d ? "" : r.d }) },
         h("span", { class: "dong-name" }, r.d),
         h("span", { class: "dong-rate" }, `${pct}%`), bar,
-        h("span", { class: "dong-meta" }, `주의 ${r.bad}곳 / 전체 ${r.n}곳`),
+        h("span", { class: "dong-meta" }, `자주 바뀜 ${r.bad}곳 / 전체 ${r.n}곳`),
         h("span", { class: "dong-meta" }, `폐업 평균 ${r.avg == null ? "-" : Math.round(r.avg) + "개월"}`), h("span", { class: "dong-meta" }, `공실 ${r.vac}곳`));
     }));
   }
@@ -140,7 +140,7 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
     if (CFG.filterStyle === "select") {
       const sel = (label, values, key) => h("label", { class: "f-sel" }, h("span", {}, label),
         h("select", { onchange: (e) => set({ [key]: e.target.value }) }, h("option", { value: "" }, "전체"), values.map((v) => h("option", { value: v, selected: q[key] === v }, v))));
-      box.replaceChildren(sel("동", DONGS, "dong"), sel("업종", TYPES, "type"), sel("주의도", Object.keys(RISK), "risk"),
+      box.replaceChildren(sel("동", DONGS, "dong"), sel("업종", TYPES, "type"), sel("교체 빈도", Object.keys(RISK), "risk"),
         h("label", { class: "f-sel" }, h("span", {}, "정렬"), h("select", { onchange: (e) => set({ sort: e.target.value }) }, Object.entries(SORTS).map(([k, v]) => h("option", { value: k, selected: q.sort === k }, v)))),
         h("label", { class: "f-check" }, h("input", { type: "checkbox", checked: q.vacant, onchange: (e) => set({ vacant: e.target.checked }) }), "공실만"),
         h("button", { type: "button", class: "f-reset", onclick: () => { if ($("#qtext")) $("#qtext").value = ""; set({ ...BLANK }); } }, "조건 지우기"));
@@ -149,35 +149,35 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
     const blank = Object.keys(BLANK).every((k) => q[k] === BLANK[k]);
     box.replaceChildren(...[
       h("div", { class: "f-top" }, h("span", { class: "f-now" }, blank ? "조건 없음 · 전체 자리" : "적용 중: " + condText()),
-        h("button", { type: "button", class: "f-reset-btn", disabled: blank, title: "동네·업종·주의도·정렬·검색어를 처음 상태로",
+        h("button", { type: "button", class: "f-reset-btn", disabled: blank, title: "동네·업종·교체 빈도·정렬·검색어를 처음 상태로",
           onclick: () => { if ($("#qtext")) $("#qtext").value = ""; set({ ...BLANK }); } }, h("span", { "aria-hidden": "true" }, "↺ "), "조건 초기화")),
       CFG.hideDongChips ? null : chipRow("동네", DONGS, q.dong, "dong"),
       chipRow("업종", TYPES, q.type, "type"),
-      chipRow("주의도", Object.keys(RISK), q.risk, "risk"),
+      chipRow("교체 빈도", Object.keys(RISK), q.risk, "risk"),
       riskHelp(),
       h("div", { class: "f-row" }, h("span", { class: "f-title" }, "정렬"), h("div", { class: "f-chips" },
         Object.entries(SORTS).map(([k, v]) => h("button", { type: "button", class: "f-chip", "aria-pressed": String(q.sort === k), onclick: () => set({ sort: k }) }, v)),
         h("button", { type: "button", class: "f-chip", "aria-pressed": String(q.vacant), onclick: () => set({ vacant: !q.vacant }) }, "공실만")))].filter(Boolean));
   }
 
-  const condText = () => [q.keyword && `“${q.keyword}”`, q.dong, q.type, q.risk && `주의도 ${q.risk}`, q.vacant && "공실만", SORTS[q.sort]].filter(Boolean).join(" · ");
+  const condText = () => [q.keyword && `“${q.keyword}”`, q.dong, q.type, q.risk && `교체 빈도 ${q.risk}`, q.vacant && "공실만", SORTS[q.sort]].filter(Boolean).join(" · ");
 
-  // 주의도 기준 — rules/risk.yaml 값을 sites.json 으로 받아 그대로 문장으로 (규칙을 바꾸면 설명도 함께 바뀜)
+  // 교체 빈도 기준(자체 기준) — rules/risk.yaml 값을 sites.json 으로 받아 그대로 문장으로 (규칙을 바꾸면 설명도 함께 바뀜)
   function riskRules() {
-    const R = (DATA && DATA.risk_rules) || { years: 10, recent_days: 730, 주의: { closed_at_least: 4, closed_2_and_avg_under: 18, recent_closed_at_least: 2 }, 보통: { closed_at_least: 2, avg_under: 24 } };
-    const ry = Math.round(R.recent_days / 365);
+    const R = (DATA && DATA.risk_rules) || { years: 10, recent_days: 730, "자주 바뀜": { closed_at_least: 4, closed_2_and_avg_under: 18, recent_closed_at_least: 2 }, 보통: { closed_at_least: 2, avg_under: 24 } };
+    const ry = Math.round(R.recent_days / 365), F = R["자주 바뀜"];
     return {
       R, ry, lines: [
-        ["주의", `최근 ${R.years}년 안에 폐업 ${R.주의.closed_at_least}번 이상 · 또는 폐업 2번 이상이면서 평균 영업기간 ${dur(R.주의.closed_2_and_avg_under)} 미만 · 또는 최근 ${ry}년 안에 폐업 ${R.주의.recent_closed_at_least}번 이상`],
-        ["보통", `주의에는 해당하지 않지만 최근 ${R.years}년 안에 폐업 ${R.보통.closed_at_least}번 이상 · 또는 폐업 가게 평균 영업기간 ${dur(R.보통.avg_under)} 미만`],
-        ["양호", `그 밖의 자리 — 최근 ${R.years}년 폐업이 거의 없거나, 문을 닫은 가게도 오래 운영됨`],
+        ["자주 바뀜", `최근 ${R.years}년 안에 폐업 ${F.closed_at_least}번 이상 · 또는 폐업 2번 이상이면서 평균 영업기간 ${dur(F.closed_2_and_avg_under)} 미만 · 또는 최근 ${ry}년 안에 폐업 ${F.recent_closed_at_least}번 이상`],
+        ["보통", `자주 바뀜에는 해당하지 않지만 최근 ${R.years}년 안에 폐업 ${R.보통.closed_at_least}번 이상 · 또는 폐업 가게 평균 영업기간 ${dur(R.보통.avg_under)} 미만`],
+        ["오래 유지", `그 밖의 자리 — 최근 ${R.years}년 폐업이 거의 없거나, 문을 닫은 가게도 오래 운영됨`],
       ],
     };
   }
   function riskHelp() {
     const { lines } = riskRules();
-    return h("div", { class: "risk-help", role: "note", "aria-label": "주의도 기준" },
-      h("p", { class: "risk-help-title" }, "주의도는 이렇게 나눕니다 ", h("small", {}, "(인허가 개업·폐업 기록만으로 계산한 참고 지표)")),
+    return h("div", { class: "risk-help", role: "note", "aria-label": "교체 빈도 기준" },
+      h("p", { class: "risk-help-title" }, "교체 빈도는 이렇게 나눕니다 ", h("small", {}, "— 이 사이트가 정한 자체 기준이며, 공식 평가나 상권 등급이 아닙니다. 인허가 개업·폐업 기록만으로 계산한 참고 지표입니다.")),
       lines.map(([r, t]) => h("p", { class: "risk-help-line" }, badge(r), h("span", {}, t))));
   }
   function riskWhy(s) {
@@ -274,8 +274,8 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
       if (c[0] > 20 && c[0] < W - 20 && c[1] > 14 && c[1] < H - 8) g += `<text x="${c[0]}" y="${c[1]}" class="map-dong" text-anchor="middle">${a.name}</text>`;
     }
     const col = RCOL;
-    const tag = { 주의: "path", 보통: "circle", 양호: "rect" };
-    const mark = (r, x, y, rad) => r === "주의" ? `<path d="M${x} ${y - rad - 1}L${x + rad + 1} ${y + rad}L${x - rad - 1} ${y + rad}Z"` : r === "양호" ? `<rect x="${x - rad}" y="${y - rad}" width="${2 * rad}" height="${2 * rad}" rx="1"` : `<circle cx="${x}" cy="${y}" r="${rad}"`;
+    const tag = { "자주 바뀜": "path", 보통: "circle", "오래 유지": "rect" };
+    const mark = (r, x, y, rad) => r === "자주 바뀜" ? `<path d="M${x} ${y - rad - 1}L${x + rad + 1} ${y + rad}L${x - rad - 1} ${y + rad}Z"` : r === "오래 유지" ? `<rect x="${x - rad}" y="${y - rad}" width="${2 * rad}" height="${2 * rad}" rx="1"` : `<circle cx="${x}" cy="${y}" r="${rad}"`;
     for (const o of DATA.sites) {
       if (o.id === s.id || !o.lat || o.dong !== s.dong) continue;
       const [x, y] = P(o.lng, o.lat);
@@ -304,10 +304,10 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
   }
   const riskIcon = (r) => {
     const L = window.L;
-    const svg = r === "주의" ? `<svg width="20" height="18" viewBox="0 0 20 18"><path d="M10 1 L19 17 L1 17 Z" fill="${RCOL.주의}" stroke="#fff" stroke-width="1.6"/></svg>`
+    const svg = r === "자주 바뀜" ? `<svg width="20" height="18" viewBox="0 0 20 18"><path d="M10 1 L19 17 L1 17 Z" fill="${RCOL["자주 바뀜"]}" stroke="#fff" stroke-width="1.6"/></svg>`
       : r === "보통" ? `<svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.6" fill="${RCOL.보통}" stroke="#fff" stroke-width="1.6"/></svg>`
-      : `<svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="${RCOL.양호}" fill-opacity=".8" stroke="#fff" stroke-width="1"/></svg>`;
-    const sz = r === "주의" ? [20, 18] : r === "보통" ? [14, 14] : [10, 10];
+      : `<svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="${RCOL["오래 유지"]}" fill-opacity=".8" stroke="#fff" stroke-width="1"/></svg>`;
+    const sz = r === "자주 바뀜" ? [20, 18] : r === "보통" ? [14, 14] : [10, 10];
     return L.divIcon({ className: "v-mk", html: svg, iconSize: sz, iconAnchor: [sz[0] / 2, sz[1] / 2] });
   };
   const pinIcon = () => window.L.divIcon({ className: "v-pin2", iconSize: [34, 46], iconAnchor: [17, 46],
@@ -384,10 +384,10 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
     const zoomCls = () => { el.classList.toggle("z-far", m.getZoom() < 13); el.classList.toggle("z-mid", m.getZoom() < 15); };
     m.on("zoomend", zoomCls); zoomCls();
 
-    // 자리 점 — 주의 ▲빨강(크게) · 보통 ●주황 · 양호 ■초록(작게). 주의가 위에 오도록 그리는 순서·높이 조정
+    // 자리 점 — 자주 바뀜 ▲빨강(크게) · 보통 ●주황 · 오래 유지 ■초록(작게). 자주 바뀜이 위에 오도록 그리는 순서·높이 조정
     const marks = L.layerGroup().addTo(m);
-    const zi = { 양호: 0, 보통: 200, 주의: 400 };
-    for (const r of ["양호", "보통", "주의"]) for (const o of sameDong) {
+    const zi = { "오래 유지": 0, 보통: 200, "자주 바뀜": 400 };
+    for (const r of ["오래 유지", "보통", "자주 바뀜"]) for (const o of sameDong) {
       if (o.id === s.id || o.risk !== r) continue;
       L.marker([o.lat, o.lng], { icon: riskIcon(r), zIndexOffset: zi[r], keyboard: false })
         .bindTooltip(`${esc(shortAddr(o))} · ${RISK[o.risk].icon} ${o.risk} · 가게 ${o.stats.count}곳`).on("click", () => openDetail(o)).addTo(marks);
@@ -418,7 +418,7 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
     const own = s.history.filter((x) => x.type === mainType && x.close), av = areaAvg(s.dong, mainType);
     const ownAvg = own.length ? own.reduce((a, x) => a + x.months, 0) / own.length : null;
     const q2 = encodeURIComponent((s.road || s.lotno).replace(/\s*\([^)]*\)$/, "").replace(/,.*$/, ""));
-    const sameDong = DATA.sites.filter((o) => o.dong === s.dong), badN = sameDong.filter((o) => o.risk === "주의").length;
+    const sameDong = DATA.sites.filter((o) => o.dong === s.dong), badN = sameDong.filter((o) => o.risk === "자주 바뀜").length;
     const useV = !!(window.VWORLD_KEY && window.L); // 브이월드 키와 Leaflet 이 있으면 실제 배경지도
     const ext = `<a class="v-ext naver" href="https://map.naver.com/p/search/${q2}" target="_blank" rel="noopener">네이버지도 ↗</a><a class="v-ext kakao" href="https://map.kakao.com/?q=${q2}" target="_blank" rel="noopener">카카오맵 ↗</a>`;
     dlg.innerHTML = `
@@ -440,7 +440,7 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
         <label><input type="checkbox" class="v-jijuk"> 필지</label>
         <span class="v-btns"><button type="button" class="v-fit">동네 전체</button><button type="button" class="v-here">이 자리로</button>${ext}</span></div>` : `<div class="v-ctrl"><span class="v-btns">${ext}</span></div>`}
       <div class="d-map">${useV ? '<div id="vmap" class="vmap" role="region" aria-label="브이월드 배경지도"></div>' : mapSVG(s)}</div>
-      <p class="map-legend"><span class="lg-pin" aria-hidden="true"></span><b>이 자리</b> &nbsp; <span class="lg-bad" aria-hidden="true"></span>주의 &nbsp; <span class="lg-mid" aria-hidden="true"></span>보통 &nbsp; <span class="lg-good" aria-hidden="true"></span>양호 — 같은 법정동(${esc(s.dong)})의 다른 자리 (주의 ${badN}곳 / ${sameDong.length}곳)</p>
+      <p class="map-legend"><span class="lg-pin" aria-hidden="true"></span><b>이 자리</b> &nbsp; <span class="lg-bad" aria-hidden="true"></span>자주 바뀜 &nbsp; <span class="lg-mid" aria-hidden="true"></span>보통 &nbsp; <span class="lg-good" aria-hidden="true"></span>오래 유지 — 같은 법정동(${esc(s.dong)})의 다른 자리 (자주 바뀜 ${badN}곳 / ${sameDong.length}곳)</p>
       <p class="map-legend"><span class="ln bjd" aria-hidden="true"></span>법정동 경계·이름(자주색 실선)<span class="wms-state" data-k="bjd"></span> &nbsp; <span class="ln adm" aria-hidden="true"></span>행정동 경계·이름(파란 점선)${useV ? " &nbsp; · 건물·필지는 가까이 확대하면 보임" : ""}</p>
       ${s.lat ? "" : `<p class="muted">이 자리는 좌표 기록이 없어 점을 찍지 못했습니다.</p>`}
 
@@ -454,10 +454,10 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
         <tr><td>${esc(s.dong)} 평균</td><td class="num">${mo(av.dong)}</td><td class="num">${av.n}곳</td><td>${ownAvg == null ? "-" : "이 자리가 " + diff(ownAvg, av.dong)}</td></tr>
         <tr><td>의정부시 평균</td><td class="num">${mo(av.city)}</td><td class="num">${av.cn}곳</td><td>${ownAvg == null ? "-" : "이 자리가 " + diff(ownAvg, av.city)}</td></tr>
       </tbody></table></div>
-      <p class="d-note">영업기간은 인허가일부터 폐업일(영업 중이면 기준일 ${TODAY.replaceAll("-", ".")})까지의 개월 수입니다. 주의도는 인허가 기록만으로 계산한 참고 지표로 매출·임대료·유동인구는 반영되지 않습니다. 지도: 배경·법정동 경계·건물·필지는 국토교통부 브이월드, 행정동 경계는 통계청 SGIS(가공 vuski/admdongkor, CC BY 4.0).</p>`;
+      <p class="d-note">영업기간은 인허가일부터 폐업일(영업 중이면 기준일 ${TODAY.replaceAll("-", ".")})까지의 개월 수입니다. 교체 빈도(자주 바뀜·보통·오래 유지)는 이 사이트의 자체 기준으로, 인허가 기록만으로 계산한 참고 지표입니다. 공식 평가가 아니며 매출·임대료·유동인구는 반영되지 않습니다. 지도: 배경·법정동 경계·건물·필지는 국토교통부 브이월드, 행정동 경계는 통계청 SGIS(가공 vuski/admdongkor, CC BY 4.0).</p>`;
     dlg.querySelector(".d-risk").append(badge(s.risk), h("span", { class: "muted" }, ` ${RISK[s.risk].desc}`),
       h("p", { class: "risk-why" }, riskWhy(s)),
-      h("details", { class: "risk-rules" }, h("summary", {}, "주의도 기준 보기"), riskRules().lines.map(([r, t]) => h("p", { class: "risk-help-line" }, badge(r), h("span", {}, t)))));
+      h("details", { class: "risk-rules" }, h("summary", {}, "교체 빈도 기준 보기 (자체 기준)"), riskRules().lines.map(([r, t]) => h("p", { class: "risk-help-line" }, badge(r), h("span", {}, t)))));
     dlg.querySelector(".d-close").addEventListener("click", () => dlg.close());
     if (!dlg.open) dlg.showModal ? dlg.showModal() : dlg.setAttribute("open", "");
     dlg.scrollTop = 0;

@@ -94,7 +94,7 @@ def log(msg: str) -> None:
 def paged(label: str, url: str, params, size: int, inspect: bool = False) -> list[dict]:
     """1쪽에서 전체 건수를 보고, 나머지 쪽은 WORKERS 개씩 동시에 받습니다. 진행 상황을 로그에 찍습니다."""
     t0 = time.time()
-    data, total = _items(get(url, params(1)).json())
+    data, total = _items(get(url, params(1), tries=6).json())  # 첫 쪽은 더 끈질기게 (504 가 잠깐씩 남)
     if inspect:
         log(f"--- {label}: 전체 {total}건, 첫 건 ---")
         log(json.dumps(data[:1], ensure_ascii=False, indent=1))
@@ -202,7 +202,7 @@ def main() -> int:
         status["bjd"] = {"name": "법정동 경계(브이월드)", "ok": True, "fetched": len(bounds)}
     except Exception as e:
         bounds = json.loads(bjd_path.read_text(encoding="utf-8")).get("bjd", []) if bjd_path.exists() else []
-        status["bjd"] = {"name": "법정동 경계(브이월드)", "ok": False, "error": safe(e)[:300], "kept": len(bounds)}
+        status["bjd"] = {"name": "법정동 경계(브이월드)", "ok": False, "error": safe(e)[:400], "kept": len(bounds)}
     log(f"[법정동 경계] {'성공' if status['bjd']['ok'] else '실패 → ' + status['bjd']['error']} · {len(bounds)}곳")
 
     now = datetime.now(KST)
