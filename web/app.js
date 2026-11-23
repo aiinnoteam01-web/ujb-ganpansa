@@ -318,11 +318,18 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
     if (VMAP) { VMAP.remove(); VMAP = null; }
     const L = window.L, el = dlg.querySelector("#vmap"), KEY = encodeURIComponent(window.VWORLD_KEY), DOMAIN = location.origin;
     const m = L.map(el, { minZoom: 7, maxZoom: 19, scrollWheelZoom: false });
-    m.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
+    // 법정동 경계 그림(WMS)을 자주색으로 물들이는 전용 층 (선 데이터를 못 받았을 때)
+    m.createPane("bjdRaster").style.zIndex = 390;
+        m.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
     const area = (DATA.areas || []).filter(Boolean);
     const sameDong = DATA.sites.filter((o) => o.dong === s.dong && o.lat);
+    const dongBounds = () => {
+      const q5 = (arr) => { const a = [...arr].sort((x, y) => x - y); return [a[Math.floor(a.length * 0.05)], a[Math.ceil(a.length * 0.95) - 1]]; };
+      const [la0, la1] = q5(sameDong.map((o) => o.lat)), [ln0, ln1] = q5(sameDong.map((o) => o.lng));
+      return L.latLngBounds([la0, ln0], [la1, ln1]);
+    };
     if (s.lat) m.setView([s.lat, s.lng], 16);
-    else if (sameDong.length) m.fitBounds(L.latLngBounds(sameDong.map((o) => [o.lat, o.lng])), { padding: [20, 20] });
+    else if (sameDong.length) m.fitBounds(dongBounds(), { padding: [20, 20] });
     else m.setView([37.738, 127.047], 13);
 
     // 배경지도 (WMTS)
@@ -331,7 +338,25 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
     const baseLayer = (k) => L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/${k}/{z}/{y}/{x}.${BASES[k][0]}`, { maxZoom: 19, attribution: "배경지도 © 국토교통부 브이월드" });
     let base = baseLayer(VPREF.base).addTo(m);
     // 겹쳐 보기 (WMS) — 브이월드 2D 데이터·국가중점데이터
-    const wms = (url, layer, extra = {}) => L.tileLayer.wms(url, Object.assign({ layers: layer, styles: layer, format: "image/png", transparent: true, version: "1.3.0", key: window.VWORLD_KEY, domain: DOMAIN, maxZoom: 19 }, extra));
+    const TRY = [{ version: "1.3.0" }, { version: "1.3.0", crs: L.CRS.EPSG900913 }, { version: "1.1.1" }, { version: "1.1.1", crs: L.CRS.EPSG900913 }];
+    const wms = (url, layer, extra = {}, tag = "") => {
+      const g = L.layerGroup();
+      let i = VPREF.wmsTry || 0, cur = null;
+      const make = () => {
+        let ok = 0, bad = 0;
+        cur = L.tileLayer.wms(url, Object.assign({ layers: layer, styles: layer, format: "image/png", transparent: true, key: window.VWORLD_KEY, domain: DOMAIN, maxZoom: 19 }, TRY[i], extra));
+        cur.on("tileload", () => { ok++; VPREF.wmsTry = i; state(tag, "ok"); });
+        cur.on("tileerror", () => {
+          if (++bad >= 3 && !ok) {
+            g.removeLayer(cur);
+            if (++i < TRY.length) { make(); g.addLayer(cur); } else state(tag, "fail");
+          }
+        });
+      };
+      make(); g.addLayer(cur);
+      return g;
+    };
+    const state = (tag, v) => { const el = tag && dlg.querySelector(`.wms-state[data-k="${tag}"]`); if (el) el.textContent = v === "ok" ? "" : " (경계 그림을 불러오지 못해 이름만 표시)"; };
     // 경계선 = 흰 테두리 위에 색 선 (어느 배경에서도 잘 보이게) + 동 이름
     const lines = (feats, color, weight, dash) => [
       L.geoJSON(feats, { style: { color: "#fff", weight: weight + 4, opacity: 0.85, fill: false }, interactive: false }),
@@ -343,7 +368,7 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
     const LAYERS = {
       // 법정동: 브이월드 선 데이터(수집 때 받아 둠)가 있으면 색 선, 없으면 브이월드 경계 그림(WMS)
       bjd: L.layerGroup([...(bjdData.length ? lines(fc(bjdData), LINE.bjd, 3.5)
-        : [wms("https://api.vworld.kr/req/wms", "lt_c_ademd", { attribution: "법정동 경계 © 국토교통부 행정구역도" })]),
+        : [wms("https://api.vworld.kr/req/wms", "lt_c_ademd", { pane: "bjdRaster", attribution: "법정동 경계 © 국토교통부 행정구역도" }, "bjd")]),
         ...bjdLabels.filter((x) => x[0]).map(([c, n]) => label(c, n, "bjd"))]),
       adm: L.layerGroup([...lines(fc(area), LINE.adm, 2.5, "8 6"), ...area.map((a) => [centroid(a.geometry), a.name]).filter((x) => x[0]).map(([c, n]) => label(c, n, "adm"))]),
       bld: wms("https://api.vworld.kr/ned/wms/BldgisSpceService", "dt_d010", { styles: "", minZoom: 15, attribution: "건물 © 국토교통부 GIS건물통합정보" }),
@@ -356,6 +381,8 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
     };
     const applyOverlay = (k) => (VPREF[k] ? LAYERS[k].addTo(m) : m.removeLayer(LAYERS[k]));
     applyBnd(); applyOverlay("bld"); applyOverlay("jijuk");
+    const zoomCls = () => { el.classList.toggle("z-far", m.getZoom() < 13); el.classList.toggle("z-mid", m.getZoom() < 15); };
+    m.on("zoomend", zoomCls); zoomCls();
 
     // 자리 점 — 주의 ▲빨강(크게) · 보통 ●주황 · 양호 ■초록(작게). 주의가 위에 오도록 그리는 순서·높이 조정
     const marks = L.layerGroup().addTo(m);
@@ -378,7 +405,7 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
     bar.querySelector(".v-bld").addEventListener("change", (e) => { VPREF.bld = e.target.checked; applyOverlay("bld"); if (VPREF.bld && m.getZoom() < 15) m.setZoom(16); });
     bar.querySelector(".v-jijuk").addEventListener("change", (e) => { VPREF.jijuk = e.target.checked; applyOverlay("jijuk"); if (VPREF.jijuk && m.getZoom() < 16) m.setZoom(17); });
     const fit = dlg.querySelector(".v-fit"), here = dlg.querySelector(".v-here");
-    if (fit && sameDong.length) fit.addEventListener("click", () => m.fitBounds(L.latLngBounds(sameDong.map((o) => [o.lat, o.lng])), { padding: [20, 20] }));
+    if (fit && sameDong.length) fit.addEventListener("click", () => m.fitBounds(dongBounds(), { padding: [20, 20] }));
     if (here) here.addEventListener("click", () => s.lat && m.setView([s.lat, s.lng], 17));
     setTimeout(() => m.invalidateSize(), 60);
     VMAP = m;
@@ -414,7 +441,7 @@ window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chip
         <span class="v-btns"><button type="button" class="v-fit">동네 전체</button><button type="button" class="v-here">이 자리로</button>${ext}</span></div>` : `<div class="v-ctrl"><span class="v-btns">${ext}</span></div>`}
       <div class="d-map">${useV ? '<div id="vmap" class="vmap" role="region" aria-label="브이월드 배경지도"></div>' : mapSVG(s)}</div>
       <p class="map-legend"><span class="lg-pin" aria-hidden="true"></span><b>이 자리</b> &nbsp; <span class="lg-bad" aria-hidden="true"></span>주의 &nbsp; <span class="lg-mid" aria-hidden="true"></span>보통 &nbsp; <span class="lg-good" aria-hidden="true"></span>양호 — 같은 법정동(${esc(s.dong)})의 다른 자리 (주의 ${badN}곳 / ${sameDong.length}곳)</p>
-      <p class="map-legend"><span class="ln bjd" aria-hidden="true"></span>법정동 경계·이름(자주색 실선) &nbsp; <span class="ln adm" aria-hidden="true"></span>행정동 경계·이름(파란 점선)${useV ? " &nbsp; · 건물·필지는 가까이 확대하면 보임" : ""}</p>
+      <p class="map-legend"><span class="ln bjd" aria-hidden="true"></span>법정동 경계·이름(자주색 실선)<span class="wms-state" data-k="bjd"></span> &nbsp; <span class="ln adm" aria-hidden="true"></span>행정동 경계·이름(파란 점선)${useV ? " &nbsp; · 건물·필지는 가까이 확대하면 보임" : ""}</p>
       ${s.lat ? "" : `<p class="muted">이 자리는 좌표 기록이 없어 점을 찍지 못했습니다.</p>`}
 
       <h3>업종 변천사 <small class="muted">${s.history.length}곳 · 오래된 순</small></h3>
