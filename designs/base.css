@@ -115,5 +115,41 @@ svg text { font-family: var(--font); }
 .v-ctrl label { display: inline-flex; align-items: center; gap: 5px; }
 .v-ctrl select { font: inherit; font-size: 13.5px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--card); color: var(--ink); }
 .map-legend .ln { display: inline-block; width: 22px; height: 0; vertical-align: middle; margin-right: 4px; }
-.map-legend .ln.bjd { border-top: 2.5px solid #555; }
-.map-legend .ln.adm { border-top: 2.5px dashed #6a3fb5; }
+.map-legend .ln.bjd { border-top: 3.5px solid #d6336c; }
+.map-legend .ln.adm { border-top: 3px dashed #1c7ed6; }
+/* 지도 범례 모양 = 지도 위 표시와 같게 */
+.lg-pin, .lg-bad, .lg-mid, .lg-good { display: inline-block; vertical-align: -2px; margin-right: 4px; }
+.lg-pin { width: 12px; height: 12px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: #5f3dc4; border: 2px solid #fff; box-shadow: 0 0 0 1px #5f3dc4; }
+.lg-bad { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 12px solid #e03131; }
+.lg-mid { width: 11px; height: 11px; border-radius: 50%; background: #f08c00; }
+.lg-good { width: 8px; height: 8px; background: #2f9e44; opacity: .85; }
+/* 지도 위 표시 */
+.v-mk { background: none; border: 0; }
+.v-pin2 { background: none; border: 0; }
+.v-pin2 svg { display: block; filter: drop-shadow(0 2px 3px rgba(0,0,0,.45)); }
+.v-pin-label { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); background: #5f3dc4; color: #fff; font: 800 13px/1 system-ui, sans-serif; padding: 5px 8px; border-radius: 4px; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+.v-lbl { background: none; border: 0; }
+.v-lbl span { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font: 800 15px/1 system-ui, sans-serif; pointer-events: none;
+  text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0 0 6px #fff; }
+.v-lbl.bjd span { color: #c2255c; font-size: 16px; }
+.v-lbl.adm span { color: #1864ab; font-size: 12.5px; font-weight: 700; transform: translate(-50%, 60%); }
+/* 지도 버튼 줄 */
+.v-btns { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.v-btns button, .v-ext { font: 700 13.5px/1 system-ui, sans-serif; padding: 8px 12px; border-radius: 6px; border: 1.5px solid #333; background: #fff; color: #222; cursor: pointer; text-decoration: none; }
+.v-btns button:hover { background: #222; color: #fff; }
+.v-ext.naver { background: #03c75a; border-color: #03c75a; color: #fff; }
+.v-ext.kakao { background: #fee500; border-color: #e0c800; color: #191919; }
+.v-ext:hover { filter: brightness(.93); }
+/* 조건 초기화 · 주의도 기준 */
+.f-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.f-now { font-size: 14px; color: var(--ink-3, #666); }
+.f-reset-btn { font: inherit; font-size: 15px; font-weight: 700; padding: 9px 18px; border-radius: 999px; border: 2px solid var(--ink, #222); background: var(--card, #fff); color: var(--ink, #222); cursor: pointer; }
+.f-reset-btn:hover:not(:disabled) { background: var(--ink, #222); color: var(--bg, #fff); }
+.f-reset-btn:disabled { opacity: .35; cursor: default; }
+.risk-help { margin: -2px 0 4px; padding: 10px 14px; border-left: 4px solid var(--line, #ccc); background: rgba(0,0,0,.03); font-size: 14px; }
+.risk-help-title { margin: 0 0 6px; font-weight: 700; } .risk-help-title small { font-weight: 400; color: var(--ink-3, #666); }
+.risk-help-line { margin: 4px 0; display: flex; gap: 8px; align-items: baseline; line-height: 1.5; }
+.risk-help-line .badge { flex: none; }
+.risk-why { margin: 8px 0 0; font-size: 14.5px; }
+.risk-rules { margin-top: 6px; font-size: 13.5px; } .risk-rules summary { cursor: pointer; color: var(--ink-2, #444); }
+.d-risk .risk-why, .d-risk .risk-rules { flex-basis: 100%; }

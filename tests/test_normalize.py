@@ -80,3 +80,19 @@ def test_semas_real_shape():
     r = semas.normalize({"bizesNm": "PENIEL", "indsSclsNm": "시계/귀금속 소매업", "lnoAdr": "경기도 의정부시 의정부동 132-39",
                          "rdnmAdr": "경기도 의정부시 시민로 132-1", "flrNo": "", "hoNo": "", "lon": 127.0497, "lat": 37.7379})
     assert n.site_key(r["lotno"], r["road"]) == ("의정부동 132-39", "의정부동", False)
+
+
+def test_bjd_clean_swaps_lat_lon_and_simplifies():
+    import bjd
+    ring = [[37.70 + i * 1e-6, 127.0] for i in range(50)] + [[37.71, 127.01], [37.70, 127.0]]
+    g = bjd._clean({"type": "Polygon", "coordinates": [ring]})
+    first = g["coordinates"][0][0][0]
+    assert g["type"] == "MultiPolygon" and first[0] > 100 and len(g["coordinates"][0][0]) < 10
+
+
+def test_bjd_without_key_raises(monkeypatch):
+    import bjd
+    monkeypatch.delenv("VWORLD_KEY", raising=False)
+    import pytest
+    with pytest.raises(RuntimeError):
+        bjd.fetch(["의정부동"])

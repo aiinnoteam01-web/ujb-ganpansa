@@ -18,6 +18,7 @@ from urllib.parse import unquote
 import requests
 import yaml
 
+import bjd
 import semas
 from history import build
 from normalize import is_temporary, normalize
@@ -193,8 +194,19 @@ def main() -> int:
         stores = json.loads(st_path.read_text(encoding="utf-8")).get("stores", []) if st_path.exists() else []
         status["semas"] = {"name": "상가정보(소상공인)", "ok": False, "error": safe(e)[:200], "kept": len(stores)}
 
+    # 법정동 경계선(지도용, 선택 보강): 실패하면 이전 파일, 없으면 화면은 그림(WMS) 경계로 대체
+    bjd_path = DATA / "bjd.json"
+    try:
+        bounds = bjd.fetch(REGION["dongs"])
+        bjd_path.write_text(json.dumps({"bjd": bounds}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        status["bjd"] = {"name": "법정동 경계(브이월드)", "ok": True, "fetched": len(bounds)}
+    except Exception as e:
+        bounds = json.loads(bjd_path.read_text(encoding="utf-8")).get("bjd", []) if bjd_path.exists() else []
+        status["bjd"] = {"name": "법정동 경계(브이월드)", "ok": False, "error": safe(e)[:300], "kept": len(bounds)}
+    log(f"[법정동 경계] {'성공' if status['bjd']['ok'] else '실패 → ' + status['bjd']['error']} · {len(bounds)}곳")
+
     now = datetime.now(KST)
-    sites = build(records, today=now.date(), source_label="행정안전부 지방행정 인허가 데이터·소상공인시장진흥공단 상가(상권)정보(공공데이터포털)", stores=stores)
+    sites = build(records, today=now.date(), source_label="행정안전부 지방행정 인허가 데이터·소상공인시장진흥공단 상가(상권)정보(공공데이터포털)", stores=stores, bjd=bounds)
     stamp = now.isoformat(timespec="minutes")
     rec_path.write_text(json.dumps({"updated_at": stamp, "records": records}, ensure_ascii=False,
                                    separators=(",", ":")), encoding="utf-8")
@@ -204,7 +216,7 @@ def main() -> int:
                                                  indent=1), encoding="utf-8")
     print(json.dumps(status, ensure_ascii=False, indent=1))
     print(f"점포 자리 {sites['meta']['site_count']}곳, 기록 {sites['meta']['record_count']}건")
-    return 0 if any(v["ok"] for k, v in status.items() if k != "semas") else 1
+    return 0 if any(v["ok"] for k, v in status.items() if k in SOURCES) else 1
 
 
 if __name__ == "__main__":

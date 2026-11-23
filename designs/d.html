@@ -25,18 +25,18 @@
 body { font-family: var(--font); color: var(--ink); font-size: 16px; background: var(--paper), var(--bg); }
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
 
-/* 머리 — 세로쓰기 붓글씨 + 산수 + 난초 */
-.site-header { position: relative; background: var(--mount) bottom / 100% 72px no-repeat; }
-.site-header::after { content: ""; position: absolute; right: 3%; top: 8px; width: 150px; height: 130px; background: var(--orchid) center / contain no-repeat; opacity: .9; pointer-events: none; }
-.header-row { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: center; padding-top: 10px; padding-bottom: 42px; }
-.title-v { writing-mode: vertical-rl; display: flex; align-items: flex-start; gap: 10px; }
-.title-v .city { font-family: var(--myung); font-size: 15px; letter-spacing: .35em; color: var(--ink-2); }
-.title-v .name { font-family: var(--brush); font-size: 52px; line-height: .9; letter-spacing: -.02em; }
-.seal { writing-mode: horizontal-tb; width: 34px; height: 34px; background: var(--seal); color: #f6e9e2; display: grid; place-items: center; font-family: var(--myung); font-size: 13px; line-height: 1.05; text-align: center; border-radius: 2px; transform: rotate(4deg); box-shadow: inset 0 0 0 2px rgba(246,233,226,.35), inset 0 0 6px rgba(0,0,0,.35); margin-top: 6px; }
-.lead-box { max-width: 640px; position: relative; z-index: 1; }
-.lead { font-family: var(--brush); font-size: 34px; line-height: 1.15; margin: 0; }
-.lead-sub { margin: 6px 0 0; color: var(--ink-2); font-size: 16px; }
-.updated { margin: 4px 0 0; font-size: 13px; color: var(--ink-3); }
+/* 머리 — 가로 붓글씨 제목 + 史 낙관 + 낮은 산수 + 작은 난초 */
+.site-header { position: relative; background: var(--mount) bottom / 100% 34px no-repeat; }
+.site-header::after { content: ""; position: absolute; right: 3%; top: 4px; width: 84px; height: 70px; background: var(--orchid) center / contain no-repeat; opacity: .75; pointer-events: none; }
+.header-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 28px; padding-top: 10px; padding-bottom: 22px; }
+.title-h { display: flex; align-items: center; gap: 10px; margin: 0; }
+.title-h .city { font-family: var(--myung); font-size: 18px; letter-spacing: .2em; color: var(--ink-2); align-self: flex-end; padding-bottom: 8px; }
+.title-h .name { font-family: var(--brush); font-size: 50px; line-height: 1; letter-spacing: -.01em; }
+.seal { width: 36px; height: 36px; background: var(--seal); color: #f6e9e2; display: grid; place-items: center; font-family: var(--myung); font-size: 23px; line-height: 1; border-radius: 3px; transform: rotate(5deg); box-shadow: inset 0 0 0 2px rgba(246,233,226,.4), inset 0 0 6px rgba(0,0,0,.35); }
+.lead-box { position: relative; z-index: 1; padding-right: 100px; }
+.lead { font-family: var(--brush); font-size: 27px; line-height: 1.1; margin: 0; }
+.lead-sub { margin: 2px 0 0; color: var(--ink-2); font-size: 14.5px; }
+.updated { margin: 2px 0 0; font-size: 12.5px; color: var(--ink-3); }
 
 main.wrap { display: flex; flex-direction: column; gap: 22px; padding-top: 0; padding-bottom: 60px; }
 /* 숫자 — 붓으로 쓴 큰 숫자, 세로 붓획으로 구분 */
@@ -83,7 +83,10 @@ main.wrap { display: flex; flex-direction: column; gap: 22px; padding-top: 0; pa
 .f-chip { border: 0; background: none; padding: 6px 12px; font-size: 15.5px; color: var(--ink-2); font-family: var(--font); border-radius: 50%; }
 .f-chip:hover { color: var(--ink); }
 .f-chip[aria-pressed="true"] { color: #f4ede0; background: radial-gradient(ellipse at 45% 50%, #1b1a18 55%, rgba(27,26,24,.75) 72%, rgba(27,26,24,0) 76%); }
-.f-reset { font-family: var(--myung); }
+.f-reset-btn { font-family: var(--myung); font-weight: 400; font-size: 16px; border-color: var(--ink); background: rgba(255,255,255,.35); }
+.f-reset-btn:not(:disabled) { box-shadow: 0 0 0 2px rgba(177,46,38,.18); }
+.f-now { font-family: var(--myung); }
+.risk-help { border-left-color: var(--seal); background: rgba(27,26,24,.035); }
 /* 장부 */
 .list-head { align-items: baseline; }
 #count { font-family: var(--brush); font-size: 34px; color: var(--seal); }
@@ -112,13 +115,12 @@ dialog h3 { font-family: var(--brush); font-weight: 400; font-size: 32px; margin
 .d-table td { border-bottom: 0; background: var(--stroke-thin) left bottom / 100% 5px no-repeat; }
 .d-table tr.on td { background-color: rgba(177,46,38,.07); }
 .d-map { background: #efe8d8; }
-.d-map .leaflet-tile-pane { filter: grayscale(1) sepia(.35) contrast(.92) brightness(1.04); }
 .map-dong { font-family: var(--myung); }
 .v-ctrl select { font-family: var(--font); background: transparent; }
 .site-footer { padding: 18px 0 40px; font-size: 13px; color: var(--ink-3); background: var(--stroke-thin) left top / 100% 6px no-repeat; }
 @media (max-width: 760px) {
-  .header-row { grid-template-columns: auto 1fr; padding-bottom: 46px; } .title-v .name { font-size: 44px; } .lead { font-size: 24px; }
-  .site-header::after { width: 90px; height: 80px; opacity: .45; }
+  .header-row { padding-bottom: 20px; } .title-h .name { font-size: 40px; } .lead { font-size: 21px; } .lead-box { padding-right: 0; }
+  .site-header::after { width: 60px; height: 52px; opacity: .4; } .v-btns { margin-left: 0; }
   #tiles { grid-template-columns: repeat(3, 1fr); } .tile + .tile::before { display: none; } .scale { margin-left: 0; }
   #dongs { grid-template-columns: repeat(3, 1fr); } .tile-num { font-size: 34px; }
   .dong .dong-meta:nth-of-type(4), .dong .dong-meta:nth-of-type(5) { display: none; } .dong-rate { font-size: 26px; }
@@ -130,7 +132,7 @@ dialog h3 { font-family: var(--brush); font-weight: 400; font-size: 32px; margin
 </head>
 <body>
 <header class="site-header"><div class="wrap header-row">
-  <h1 class="title-v"><span class="city">의정부</span><span class="name">간판사</span><span class="seal" aria-hidden="true">간판<br>내력</span></h1>
+  <h1 class="title-h"><span class="city">의정부</span><span class="name">간판사</span><span class="seal" title="史 — 역사 사" aria-hidden="true">史</span></h1>
   <div class="lead-box">
     <p class="lead">간판이 바뀌어 온 자리,<br>그 내력을 읽습니다</p>
     <p class="lead-sub">계약하기 전에, 그 자리를 거쳐 간 가게부터 살피세요.</p>
@@ -152,7 +154,7 @@ dialog h3 { font-family: var(--brush); font-weight: 400; font-size: 32px; margin
 </main>
 <footer class="site-footer wrap"><p id="source-note"></p><p>의정부시 공식 사이트가 아닙니다. 주의도는 인허가 기록으로 계산한 참고 지표이며, 계약 전에는 현장과 건축물대장을 꼭 확인하세요.</p></footer>
 <dialog id="detail" aria-labelledby="d-title"></dialog>
-<script>window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chips", mapBase: "white", darkFrom: 3, ramp: ["#ece6d9", "#d4ccbd", "#aaa294", "#7b746a", "#4e4943", "#24221f"], mapOwn: "#e6dcc6", mapOther: "#f1ebdd", mapLine: "#9c9384", mapPin: "#1b1a18", admLine: "#5a4a7a", ink: "#1b1a18", ink2: "#45403a" };</script>
+<script>window.DESIGN = { kicker: "간판 내력서", list: "ledger", filterStyle: "chips", mapBase: "Base", darkFrom: 3, ramp: ["#ece6d9", "#d4ccbd", "#aaa294", "#7b746a", "#4e4943", "#24221f"], mapOwn: "#e6dcc6", mapOther: "#f1ebdd", mapLine: "#9c9384", mapPin: "#1b1a18", admLine: "#5a4a7a", ink: "#1b1a18", ink2: "#45403a" };</script>
 <script src="core.js"></script>
 </body>
 </html>

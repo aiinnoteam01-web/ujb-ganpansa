@@ -22,13 +22,10 @@
     양호: { cls: "risk-good", icon: "■", desc: "한 가게가 오래 운영된 편" },
   };
   const SORTS = { closed_desc: "자주 바뀐 순", avg_desc: "오래 버틴 순", vacant_long: "공실 오래된 순", recent: "최근 폐업 순" };
-  // 빠른 조건: 누르면 조건이 바로 바뀜 (AI 아님)
-  const QUICK = [
-    ["의정부동 자주 바뀐 자리", { dong: "의정부동", sort: "closed_desc" }],
-    ["카페가 오래 버틴 자리", { type: "카페", sort: "avg_desc" }],
-    ["지금 공실인 자리", { vacant: true, sort: "vacant_long" }],
-    ["최근 폐업한 자리", { sort: "recent" }],
-  ];
+  // 지도 색 — 주의·보통·양호는 모양+색, 이 자리는 보라 핀, 경계선은 법정동 자주 실선 / 행정동 파랑 점선
+  const RCOL = { 주의: "#e03131", 보통: "#f08c00", 양호: "#2f9e44" };
+  const LINE = { bjd: "#d6336c", adm: "#1c7ed6" };
+  const PINC = "#5f3dc4";
   const PAGE = 30;
 
   // ---------- 상태 ----------
@@ -128,8 +125,7 @@
       oninput: () => { clearTimeout(t); t = setTimeout(() => set({ keyword: input.value.trim() }), 200); } });
     const form = h("form", { class: "search-form", role: "search", onsubmit: (e) => { e.preventDefault(); set({ keyword: input.value.trim() }); const r = results(); if (r.length === 1) openDetail(r[0]); } },
       h("span", { class: "search-icon", "aria-hidden": "true" }, "⌕"), input, h("button", { class: "search-btn" }, "찾기"));
-    box.replaceChildren(form, h("div", { class: "examples" }, h("span", { class: "muted" }, "빠른 조건"),
-      QUICK.map(([label, patch]) => h("button", { type: "button", class: "ex", onclick: () => { input.value = ""; set({ ...BLANK, ...patch }); } }, label))));
+    box.replaceChildren(form);
   }
 
   // ---------- 조건 ----------
@@ -149,14 +145,46 @@
         h("button", { type: "button", class: "f-reset", onclick: () => { if ($("#qtext")) $("#qtext").value = ""; set({ ...BLANK }); } }, "조건 지우기"));
       return;
     }
+    const blank = Object.keys(BLANK).every((k) => q[k] === BLANK[k]);
     box.replaceChildren(...[
+      h("div", { class: "f-top" }, h("span", { class: "f-now" }, blank ? "조건 없음 · 전체 자리" : "적용 중: " + condText()),
+        h("button", { type: "button", class: "f-reset-btn", disabled: blank, title: "동네·업종·주의도·정렬·검색어를 처음 상태로",
+          onclick: () => { if ($("#qtext")) $("#qtext").value = ""; set({ ...BLANK }); } }, h("span", { "aria-hidden": "true" }, "↺ "), "조건 초기화")),
       CFG.hideDongChips ? null : chipRow("동네", DONGS, q.dong, "dong"),
       chipRow("업종", TYPES, q.type, "type"),
       chipRow("주의도", Object.keys(RISK), q.risk, "risk"),
+      riskHelp(),
       h("div", { class: "f-row" }, h("span", { class: "f-title" }, "정렬"), h("div", { class: "f-chips" },
         Object.entries(SORTS).map(([k, v]) => h("button", { type: "button", class: "f-chip", "aria-pressed": String(q.sort === k), onclick: () => set({ sort: k }) }, v)),
-        h("button", { type: "button", class: "f-chip", "aria-pressed": String(q.vacant), onclick: () => set({ vacant: !q.vacant }) }, "공실만"),
-        h("button", { type: "button", class: "f-reset", onclick: () => { if ($("#qtext")) $("#qtext").value = ""; set({ ...BLANK }); } }, "조건 지우기")))].filter(Boolean));
+        h("button", { type: "button", class: "f-chip", "aria-pressed": String(q.vacant), onclick: () => set({ vacant: !q.vacant }) }, "공실만")))].filter(Boolean));
+  }
+
+  const condText = () => [q.keyword && `“${q.keyword}”`, q.dong, q.type, q.risk && `주의도 ${q.risk}`, q.vacant && "공실만", SORTS[q.sort]].filter(Boolean).join(" · ");
+
+  // 주의도 기준 — rules/risk.yaml 값을 sites.json 으로 받아 그대로 문장으로 (규칙을 바꾸면 설명도 함께 바뀜)
+  function riskRules() {
+    const R = (DATA && DATA.risk_rules) || { years: 10, recent_days: 730, 주의: { closed_at_least: 4, closed_2_and_avg_under: 18, recent_closed_at_least: 2 }, 보통: { closed_at_least: 2, avg_under: 24 } };
+    const ry = Math.round(R.recent_days / 365);
+    return {
+      R, ry, lines: [
+        ["주의", `최근 ${R.years}년 안에 폐업 ${R.주의.closed_at_least}번 이상 · 또는 폐업 2번 이상이면서 평균 영업기간 ${dur(R.주의.closed_2_and_avg_under)} 미만 · 또는 최근 ${ry}년 안에 폐업 ${R.주의.recent_closed_at_least}번 이상`],
+        ["보통", `주의에는 해당하지 않지만 최근 ${R.years}년 안에 폐업 ${R.보통.closed_at_least}번 이상 · 또는 폐업 가게 평균 영업기간 ${dur(R.보통.avg_under)} 미만`],
+        ["양호", `그 밖의 자리 — 최근 ${R.years}년 폐업이 거의 없거나, 문을 닫은 가게도 오래 운영됨`],
+      ],
+    };
+  }
+  function riskHelp() {
+    const { lines } = riskRules();
+    return h("div", { class: "risk-help", role: "note", "aria-label": "주의도 기준" },
+      h("p", { class: "risk-help-title" }, "주의도는 이렇게 나눕니다 ", h("small", {}, "(인허가 개업·폐업 기록만으로 계산한 참고 지표)")),
+      lines.map(([r, t]) => h("p", { class: "risk-help-line" }, badge(r), h("span", {}, t))));
+  }
+  function riskWhy(s) {
+    const { R, ry } = riskRules();
+    const cut = `${+TODAY.slice(0, 4) - R.years}${TODAY.slice(4, 7)}`;
+    const closed = s.history.filter((x) => x.close && x.close.slice(0, 7) >= cut);
+    const avg = closed.length ? closed.reduce((a, x) => a + x.months, 0) / closed.length : null;
+    return `이 자리: 최근 ${R.years}년 폐업 ${closed.length}번 · 폐업 가게 평균 영업 ${avg == null ? "-" : dur(avg)} · 최근 ${ry}년 폐업 ${s.stats.recent_closed_2y}번`;
   }
 
   // ---------- 목록 ----------
@@ -200,7 +228,7 @@
   function renderList() {
     const all = results(), box = $("#list");
     const c = $("#count"); if (c) c.textContent = `${all.length.toLocaleString()}곳`;
-    const cond = $("#cond"); if (cond) cond.textContent = [q.keyword && `“${q.keyword}”`, q.dong, q.type, q.risk && `주의도 ${q.risk}`, q.vacant && "공실만", SORTS[q.sort]].filter(Boolean).join(" · ");
+    const cond = $("#cond"); if (cond) cond.textContent = condText();
     if (!all.length) { box.replaceChildren(h("p", { class: "empty" }, "조건에 맞는 자리가 없어요. 조건을 줄이거나 지워 보세요.")); return; }
     const page = all.slice(0, shown);
     const items = CFG.list === "ledger" ? page.map(itemLedger) : CFG.list === "gantt" ? [ganttHead(), ...page.map(itemGantt)] : page.map(itemCard);
@@ -239,12 +267,12 @@
     const rings = (g) => (g.type === "MultiPolygon" ? g.coordinates.map((p) => p[0]) : [g.coordinates[0]]);
     const path = (g) => (g.type === "MultiPolygon" ? g.coordinates : [g.coordinates]).map((poly) => poly.map((r) => "M" + r.map((c) => P(c[0], c[1]).map((v) => v.toFixed(1)).join(",")).join("L") + "Z").join("")).join("");
     let g = "";
-    for (const a of areas) g += `<path d="${path(a.geometry)}" fill="${CFG.mapOther}" stroke="${CFG.mapLine}" stroke-width="1.2" stroke-dasharray="5 4" fill-rule="evenodd"/>`;
+    for (const a of areas) g += `<path d="${path(a.geometry)}" fill="${CFG.mapOther}" stroke="${LINE.adm}" stroke-width="2" stroke-dasharray="7 5" fill-rule="evenodd"/>`;
     for (const a of areas) {
       const ps = rings(a.geometry).flat(), c = P(ps.reduce((t, p) => t + p[0], 0) / ps.length, ps.reduce((t, p) => t + p[1], 0) / ps.length);
       if (c[0] > 20 && c[0] < W - 20 && c[1] > 14 && c[1] < H - 8) g += `<text x="${c[0]}" y="${c[1]}" class="map-dong" text-anchor="middle">${a.name}</text>`;
     }
-    const col = { 주의: "#d03b3b", 보통: "#c98500", 양호: "#0ca30c" };
+    const col = RCOL;
     const tag = { 주의: "path", 보통: "circle", 양호: "rect" };
     const mark = (r, x, y, rad) => r === "주의" ? `<path d="M${x} ${y - rad - 1}L${x + rad + 1} ${y + rad}L${x - rad - 1} ${y + rad}Z"` : r === "양호" ? `<rect x="${x - rad}" y="${y - rad}" width="${2 * rad}" height="${2 * rad}" rx="1"` : `<circle cx="${x}" cy="${y}" r="${rad}"`;
     for (const o of DATA.sites) {
@@ -254,14 +282,37 @@
     }
     if (s.lat) {
       const [x, y] = P(s.lng, s.lat);
-      g += `<circle cx="${x}" cy="${y}" r="16" fill="${CFG.mapPin}" fill-opacity=".18"/><circle cx="${x}" cy="${y}" r="7" fill="${CFG.mapPin}" stroke="#fff" stroke-width="2.5"/><text x="${x + 12}" y="${y - 10}" class="map-pin">이 자리</text>`;
+      g += `<circle cx="${x}" cy="${y}" r="16" fill="${PINC}" fill-opacity=".2"/><circle cx="${x}" cy="${y}" r="8" fill="${PINC}" stroke="#fff" stroke-width="3"/><text x="${x + 12}" y="${y - 10}" class="map-pin">이 자리</text>`;
     }
     return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(s.dong)} 자리 위치 (점선은 행정동 경계)">${g}</svg>`;
   }
 
   // 브이월드 지도 (공공데이터포털: 국토교통부 WMTS 배경지도 · 행정구역도 · GIS건물통합정보 · 연속지적도). 인증키는 web/config.js
   let VMAP = null;
-  const VPREF = { base: CFG.mapBase || "Base", bnd: "both", bld: false, jijuk: false }; // 선택은 다음 자리를 열어도 유지
+  const VPREF = { base: "Base", bnd: "both", bld: false, jijuk: false }; // 기본 = 일반지도. 선택은 다음 자리를 열어도 유지
+  // 다각형 무게중심 (가장 큰 고리 기준) — 동 이름 놓을 자리
+  function centroid(g) {
+    const polys = g.type === "MultiPolygon" ? g.coordinates : [g.coordinates];
+    let best = null, bestA = 0;
+    for (const poly of polys) {
+      const r = poly[0]; let a = 0, cx = 0, cy = 0;
+      for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const f = r[j][0] * r[i][1] - r[i][0] * r[j][1]; a += f; cx += (r[j][0] + r[i][0]) * f; cy += (r[j][1] + r[i][1]) * f; }
+      if (Math.abs(a) > bestA) { bestA = Math.abs(a); best = [cy / (3 * a), cx / (3 * a)]; }
+    }
+    return best;
+  }
+  const riskIcon = (r) => {
+    const L = window.L;
+    const svg = r === "주의" ? `<svg width="20" height="18" viewBox="0 0 20 18"><path d="M10 1 L19 17 L1 17 Z" fill="${RCOL.주의}" stroke="#fff" stroke-width="1.6"/></svg>`
+      : r === "보통" ? `<svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.6" fill="${RCOL.보통}" stroke="#fff" stroke-width="1.6"/></svg>`
+      : `<svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="${RCOL.양호}" fill-opacity=".8" stroke="#fff" stroke-width="1"/></svg>`;
+    const sz = r === "주의" ? [20, 18] : r === "보통" ? [14, 14] : [10, 10];
+    return L.divIcon({ className: "v-mk", html: svg, iconSize: sz, iconAnchor: [sz[0] / 2, sz[1] / 2] });
+  };
+  const pinIcon = () => window.L.divIcon({ className: "v-pin2", iconSize: [34, 46], iconAnchor: [17, 46],
+    html: `<span class="v-pin-label">이 자리</span><svg width="34" height="46" viewBox="0 0 34 46"><path d="M17 45 C17 45 2 27 2 16 A15 15 0 1 1 32 16 C32 27 17 45 17 45 Z" fill="${PINC}" stroke="#fff" stroke-width="3"/><circle cx="17" cy="16" r="6" fill="#fff"/></svg>` });
+  const label = (latlng, text, kind) => window.L.marker(latlng, { interactive: false, keyboard: false,
+    icon: window.L.divIcon({ className: `v-lbl ${kind}`, html: `<span>${esc(text)}</span>`, iconSize: [0, 0] }) });
   function vmap(s, dlg) {
     if (VMAP) { VMAP.remove(); VMAP = null; }
     const L = window.L, el = dlg.querySelector("#vmap"), KEY = encodeURIComponent(window.VWORLD_KEY), DOMAIN = location.origin;
@@ -274,15 +325,26 @@
     else m.setView([37.738, 127.047], 13);
 
     // 배경지도 (WMTS)
-    const BASES = { Base: ["png", "일반지도"], Satellite: ["jpeg", "위성사진"], white: ["png", "백색지도"] };
+    const BASES = { Base: ["png", "일반지도"], Satellite: ["jpeg", "위성사진"] };
+    if (!BASES[VPREF.base]) VPREF.base = "Base";
     const baseLayer = (k) => L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/${k}/{z}/{y}/{x}.${BASES[k][0]}`, { maxZoom: 19, attribution: "배경지도 © 국토교통부 브이월드" });
     let base = baseLayer(VPREF.base).addTo(m);
     // 겹쳐 보기 (WMS) — 브이월드 2D 데이터·국가중점데이터
     const wms = (url, layer, extra = {}) => L.tileLayer.wms(url, Object.assign({ layers: layer, styles: layer, format: "image/png", transparent: true, version: "1.3.0", key: window.VWORLD_KEY, domain: DOMAIN, maxZoom: 19 }, extra));
+    // 경계선 = 흰 테두리 위에 색 선 (어느 배경에서도 잘 보이게) + 동 이름
+    const lines = (feats, color, weight, dash) => [
+      L.geoJSON(feats, { style: { color: "#fff", weight: weight + 4, opacity: 0.85, fill: false }, interactive: false }),
+      L.geoJSON(feats, { style: { color, weight, dashArray: dash, opacity: 1, fill: false }, interactive: false })];
+    const fc = (arr) => ({ type: "FeatureCollection", features: arr.map((a) => ({ type: "Feature", properties: { name: a.name }, geometry: a.geometry })) });
+    const bjdData = DATA.bjd || [];
+    const bjdLabels = bjdData.length ? bjdData.map((a) => [centroid(a.geometry), a.name])
+      : DONGS.map((d) => { const ps = DATA.sites.filter((o) => o.dong === d && o.lat); return ps.length ? [[ps.reduce((t, o) => t + o.lat, 0) / ps.length, ps.reduce((t, o) => t + o.lng, 0) / ps.length], d] : null; }).filter(Boolean);
     const LAYERS = {
-      bjd: wms("https://api.vworld.kr/req/wms", "lt_c_ademd", { attribution: "법정동 경계 © 국토교통부 행정구역도" }),
-      adm: L.geoJSON({ type: "FeatureCollection", features: area.map((a) => ({ type: "Feature", properties: { name: a.name }, geometry: a.geometry })) },
-        { style: { color: CFG.admLine || "#6a3fb5", weight: 2, dashArray: "6 5", fill: false }, interactive: false }),
+      // 법정동: 브이월드 선 데이터(수집 때 받아 둠)가 있으면 색 선, 없으면 브이월드 경계 그림(WMS)
+      bjd: L.layerGroup([...(bjdData.length ? lines(fc(bjdData), LINE.bjd, 3.5)
+        : [wms("https://api.vworld.kr/req/wms", "lt_c_ademd", { attribution: "법정동 경계 © 국토교통부 행정구역도" })]),
+        ...bjdLabels.filter((x) => x[0]).map(([c, n]) => label(c, n, "bjd"))]),
+      adm: L.layerGroup([...lines(fc(area), LINE.adm, 2.5, "8 6"), ...area.map((a) => [centroid(a.geometry), a.name]).filter((x) => x[0]).map(([c, n]) => label(c, n, "adm"))]),
       bld: wms("https://api.vworld.kr/ned/wms/BldgisSpceService", "dt_d010", { styles: "", minZoom: 15, attribution: "건물 © 국토교통부 GIS건물통합정보" }),
       jijuk: wms("https://api.vworld.kr/req/wms", "lp_pa_cbnd_bubun", { minZoom: 16, attribution: "필지 © 국토교통부 연속지적도" }),
     };
@@ -294,16 +356,15 @@
     const applyOverlay = (k) => (VPREF[k] ? LAYERS[k].addTo(m) : m.removeLayer(LAYERS[k]));
     applyBnd(); applyOverlay("bld"); applyOverlay("jijuk");
 
-    // 자리 점
-    const col = { 주의: "#d03b3b", 보통: "#c98500", 양호: "#0ca30c" };
+    // 자리 점 — 주의 ▲빨강(크게) · 보통 ●주황 · 양호 ■초록(작게). 주의가 위에 오도록 그리는 순서·높이 조정
     const marks = L.layerGroup().addTo(m);
-    for (const o of sameDong) {
-      if (o.id === s.id) continue;
-      L.circleMarker([o.lat, o.lng], { radius: 6, color: "#fff", weight: 1.5, fillColor: col[o.risk], fillOpacity: 0.9 })
+    const zi = { 양호: 0, 보통: 200, 주의: 400 };
+    for (const r of ["양호", "보통", "주의"]) for (const o of sameDong) {
+      if (o.id === s.id || o.risk !== r) continue;
+      L.marker([o.lat, o.lng], { icon: riskIcon(r), zIndexOffset: zi[r], keyboard: false })
         .bindTooltip(`${esc(shortAddr(o))} · ${RISK[o.risk].icon} ${o.risk} · 가게 ${o.stats.count}곳`).on("click", () => openDetail(o)).addTo(marks);
     }
-    if (s.lat) L.circleMarker([s.lat, s.lng], { radius: 10, color: "#fff", weight: 3, fillColor: CFG.mapPin, fillOpacity: 1 })
-      .bindTooltip("이 자리", { permanent: true, direction: "top", offset: [0, -10], className: "v-pin" }).addTo(marks);
+    if (s.lat) L.marker([s.lat, s.lng], { icon: pinIcon(), zIndexOffset: 1000, keyboard: false, title: "이 자리" }).addTo(marks);
 
     // 선택 박스
     const bar = dlg.querySelector(".v-ctrl");
@@ -331,6 +392,7 @@
     const q2 = encodeURIComponent((s.road || s.lotno).replace(/\s*\([^)]*\)$/, "").replace(/,.*$/, ""));
     const sameDong = DATA.sites.filter((o) => o.dong === s.dong), badN = sameDong.filter((o) => o.risk === "주의").length;
     const useV = !!(window.VWORLD_KEY && window.L); // 브이월드 키와 Leaflet 이 있으면 실제 배경지도
+    const ext = `<a class="v-ext naver" href="https://map.naver.com/p/search/${q2}" target="_blank" rel="noopener">네이버지도 ↗</a><a class="v-ext kakao" href="https://map.kakao.com/?q=${q2}" target="_blank" rel="noopener">카카오맵 ↗</a>`;
     dlg.innerHTML = `
       <div class="d-head"><div><p class="d-kicker">${CFG.kicker || "자리 이력서"}</p><h2 id="d-title">${esc(shortAddr(s))}</h2>
         <p class="muted">지번 ${esc(s.lotno.replace("경기도 의정부시 ", ""))}${s.unit ? "" : " · 건물 단위로 묶음"}</p></div>
@@ -344,17 +406,16 @@
       </div>
       <h3>위치</h3>
       ${useV ? `<div class="v-ctrl" role="group" aria-label="지도 보기 선택">
-        <label>배경 <select class="v-base"><option value="Base">일반지도</option><option value="Satellite">위성사진</option><option value="white">백색지도</option></select></label>
+        <label>배경 <select class="v-base"><option value="Base">일반지도</option><option value="Satellite">위성사진</option></select></label>
         <label>경계선 <select class="v-bnd"><option value="both">법정동 + 행정동</option><option value="bjd">법정동</option><option value="adm">행정동</option><option value="none">없음</option></select></label>
         <label><input type="checkbox" class="v-bld"> 건물</label>
         <label><input type="checkbox" class="v-jijuk"> 필지</label>
-        <button type="button" class="v-fit">동네 전체</button> <button type="button" class="v-here">이 자리로</button></div>` : ""}
+        <span class="v-btns"><button type="button" class="v-fit">동네 전체</button><button type="button" class="v-here">이 자리로</button>${ext}</span></div>` : `<div class="v-ctrl"><span class="v-btns">${ext}</span></div>`}
       <div class="d-map">${useV ? '<div id="vmap" class="vmap" role="region" aria-label="브이월드 배경지도"></div>' : mapSVG(s)}</div>
-      <p class="map-legend"><span class="pin"></span>이 자리 &nbsp; <span class="lg">▲</span> 주의 <span class="lg mid">●</span> 보통 <span class="lg good">■</span> 양호 — 같은 법정동(${esc(s.dong)})의 다른 자리 (주의 ${badN}곳 / ${sameDong.length}곳)</p>
-      <p class="map-legend">${useV ? '<span class="ln bjd"></span>법정동 경계(실선, 국토교통부 행정구역도) &nbsp; ' : ""}<span class="ln adm"></span>행정동 경계(보라 점선, 통계청)${useV ? " &nbsp; · 건물: GIS건물통합정보 · 필지: 연속지적도 (가까이 확대하면 보임)" : ""}</p>
+      <p class="map-legend"><span class="lg-pin" aria-hidden="true"></span><b>이 자리</b> &nbsp; <span class="lg-bad" aria-hidden="true"></span>주의 &nbsp; <span class="lg-mid" aria-hidden="true"></span>보통 &nbsp; <span class="lg-good" aria-hidden="true"></span>양호 — 같은 법정동(${esc(s.dong)})의 다른 자리 (주의 ${badN}곳 / ${sameDong.length}곳)</p>
+      <p class="map-legend"><span class="ln bjd" aria-hidden="true"></span>법정동 경계·이름(자주색 실선) &nbsp; <span class="ln adm" aria-hidden="true"></span>행정동 경계·이름(파란 점선)${useV ? " &nbsp; · 건물·필지는 가까이 확대하면 보임" : ""}</p>
       ${s.lat ? "" : `<p class="muted">이 자리는 좌표 기록이 없어 점을 찍지 못했습니다.</p>`}
 
-      <p class="d-links">큰 지도로 보기: <a href="https://map.naver.com/p/search/${q2}" target="_blank" rel="noopener">네이버 지도</a> · <a href="https://map.kakao.com/?q=${q2}" target="_blank" rel="noopener">카카오맵</a></p>
       <h3>업종 변천사 <small class="muted">${s.history.length}곳 · 오래된 순</small></h3>
       <div class="table-wrap"><table class="d-table"><thead><tr><th>순번</th><th>상호</th><th>업종</th><th>개업</th><th>폐업</th><th class="num">영업기간</th></tr></thead><tbody>
         ${s.history.map((x, i) => `<tr${x.close ? "" : ' class="on"'}><td>${i + 1}</td><td>${esc(x.name)}</td><td>${x.type}</td><td>${x.open.replaceAll("-", ".")}</td><td>${x.close ? x.close.replaceAll("-", ".") : "영업 중"}</td><td class="num">${x.months}개월</td></tr>`).join("")}
@@ -366,7 +427,9 @@
         <tr><td>의정부시 평균</td><td class="num">${mo(av.city)}</td><td class="num">${av.cn}곳</td><td>${ownAvg == null ? "-" : "이 자리가 " + diff(ownAvg, av.city)}</td></tr>
       </tbody></table></div>
       <p class="d-note">영업기간은 인허가일부터 폐업일(영업 중이면 기준일 ${TODAY.replaceAll("-", ".")})까지의 개월 수입니다. 주의도는 인허가 기록만으로 계산한 참고 지표로 매출·임대료·유동인구는 반영되지 않습니다. 지도: 배경·법정동 경계·건물·필지는 국토교통부 브이월드, 행정동 경계는 통계청 SGIS(가공 vuski/admdongkor, CC BY 4.0).</p>`;
-    dlg.querySelector(".d-risk").append(badge(s.risk), h("span", { class: "muted" }, ` ${RISK[s.risk].desc}`));
+    dlg.querySelector(".d-risk").append(badge(s.risk), h("span", { class: "muted" }, ` ${RISK[s.risk].desc}`),
+      h("p", { class: "risk-why" }, riskWhy(s)),
+      h("details", { class: "risk-rules" }, h("summary", {}, "주의도 기준 보기"), riskRules().lines.map(([r, t]) => h("p", { class: "risk-help-line" }, badge(r), h("span", {}, t)))));
     dlg.querySelector(".d-close").addEventListener("click", () => dlg.close());
     if (!dlg.open) dlg.showModal ? dlg.showModal() : dlg.setAttribute("open", "");
     dlg.scrollTop = 0;

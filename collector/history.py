@@ -34,6 +34,18 @@ def months_between(a: str, b: str) -> int:
     return max(0, (y.year - x.year) * 12 + (y.month - x.month) - (1 if y.day < x.day else 0))
 
 
+MULTI_AT = 3
+
+
+def max_concurrent(hist: list[dict], t: str) -> int:
+    ev = sorted([(h["open"], 1) for h in hist] + [(h["close"] or t, -1) for h in hist], key=lambda e: (e[0], e[1]))
+    cur = peak = 0
+    for _, v in ev:
+        cur += v
+        peak = max(peak, cur)
+    return peak
+
+
 def risk_level(hist: list[dict], today: date) -> str:
     cut = date(today.year - RISK["years"], today.month, 1).isoformat()
     closed = [h for h in hist if h["close"] and h["close"] >= cut]
@@ -73,13 +85,17 @@ def attach_stores(sites: list[dict], stores: list[dict]) -> None:
         s["stats"]["occupied_other"] = bool(found) and not s["stats"]["current"]
 
 
-def build(records: list[dict], today: date | None = None, source_label: str = "", stores: list[dict] | None = None) -> dict:
+def build(records: list[dict], today: date | None = None, source_label: str = "", stores: list[dict] | None = None,
+          bjd: list[dict] | None = None) -> dict:
     today = today or date.today()
     t = today.isoformat()
     groups: dict[str, list[dict]] = defaultdict(list)
     place: dict[str, dict] = {}
     for r in records:
-        if not r.get("open") or int(r["open"][:4]) < REGION["min_open_year"]:
+        if not r.get("open"):
+            continue
+        # 2000년 이전에 문 닫은 기록만 뺌 (그 전에 열어 지금까지 영업 중인 오래된 가게는 남김)
+        if (r.get("close") or "9999")[:4] < str(REGION["min_open_year"]):
             continue
         if r.get("close") and r["close"] < r["open"]:
             continue  # 날짜 오류
@@ -95,9 +111,16 @@ def build(records: list[dict], today: date | None = None, source_label: str = ""
             place[key] = {"road": r.get("road") or "", "lotno": r.get("lotno") or "", "dong": dong,
                           "unit": unit, "lat": r.get("lat"), "lng": r.get("lng")}
 
-    sites = []
-    for i, key in enumerate(sorted(groups)):
+    sites, multi = [], []
+    for key in sorted(groups):
         hist = sorted(groups[key], key=lambda h: h["open"])
+        # 같은 '자리'에 동시에 3곳 이상 영업한 적이 있으면 백화점·마트·휴게소처럼 여러 가게가 함께 있는 곳
+        # → 한 자리의 간판 교체로 볼 수 없어 자리 비교(주의도·순위)에서 뺌
+        addr = f"{place[key]['road']} {place[key]['lotno']}"
+        if max_concurrent(hist, t) >= MULTI_AT or any(w in addr for w in REGION.get("multi_words", [])):
+            multi.append(key)
+            continue
+        i = len(sites)
         closed = [h for h in hist if h["close"]]
         current = next((h for h in reversed(hist) if not h["close"]), None)
         sites.append({
@@ -133,10 +156,14 @@ def build(records: list[dict], today: date | None = None, source_label: str = ""
             "region": REGION["name"], "source": source_label, "generated": t,
             "site_count": len(sites), "record_count": sum(len(s["history"]) for s in sites),
             "store_count": len(stores or []),
-            "note": "동네는 법정동 기준입니다. 같은 건물에서 층·호가 기록되지 않은 경우 건물 단위로 묶었습니다.",
+            "multi_excluded": len(multi),
+            "note": "동네는 법정동 기준입니다. 같은 건물에서 층·호가 기록되지 않은 경우 건물 단위로 묶었습니다. "
+                    f"백화점·마트·휴게소처럼 한 층에 여러 가게가 함께 있는 곳 {len(multi)}곳은 자리 비교에서 뺐습니다.",
         },
         "area_stats": area,
         # 지도에서 행정동 경계를 겹쳐 보기 위한 자료 (출처: 통계청 SGIS, 가공 vuski/admdongkor, CC BY 4.0)
+        "bjd": bjd or [],
+        "risk_rules": RISK,
         "areas": [{"name": f["properties"]["name"], "geometry": f["geometry"]} for f in _GEO["features"]],
         "by_year": {"open": dict(sorted(opens.items())), "close": dict(sorted(closes.items()))},
         "sites": sites,
