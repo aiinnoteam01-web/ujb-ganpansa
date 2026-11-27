@@ -1,37 +1,37 @@
 {
- "updated_at": "2026-11-26T10:36+09:00",
+ "updated_at": "2026-11-27T11:24+09:00",
  "sources": {
   "restaurant": {
    "name": "일반음식점",
    "ok": true,
    "fetched": 18567,
    "temporary_skipped": 95,
-   "seconds": 829.4
+   "seconds": 3094.5
   },
   "rest": {
    "name": "휴게음식점(카페·편의점)",
    "ok": true,
    "fetched": 4299,
-   "temporary_skipped": 388,
-   "seconds": 162.3
+   "temporary_skipped": 390,
+   "seconds": 376.6
   },
   "bakery": {
    "name": "제과점",
    "ok": true,
    "fetched": 516,
    "temporary_skipped": 42,
-   "seconds": 18.0
+   "seconds": 125.9
   },
   "semas": {
    "name": "상가정보(소상공인)",
    "ok": true,
    "fetched": 20601,
-   "seconds": 30.4
+   "seconds": 37.6
   },
   "bjd": {
    "name": "법정동 경계(브이월드)",
    "ok": false,
-   "error": "_from_data_api: 502 Server Error: Bad Gateway for url: https://api.vworld.kr/req/data?service=data&request=GetFeature&data=LT_ / _from_wfs: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))",
+   "error": "_from_data_api: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')) / _from_wfs: 502 Server Error: Bad Gateway for url: https://api.vworld.kr/req/wfs?SERVICE=WFS&REQUEST=GetFeature&VERSION=1.",
    "kept": 0
   }
  }
