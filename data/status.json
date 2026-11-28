@@ -1,32 +1,32 @@
 {
- "updated_at": "2026-11-27T11:24+09:00",
+ "updated_at": "2026-11-28T10:42+09:00",
  "sources": {
   "restaurant": {
    "name": "일반음식점",
    "ok": true,
-   "fetched": 18567,
+   "fetched": 18569,
    "temporary_skipped": 95,
-   "seconds": 3094.5
+   "seconds": 1157.4
   },
   "rest": {
    "name": "휴게음식점(카페·편의점)",
    "ok": true,
-   "fetched": 4299,
+   "fetched": 4301,
    "temporary_skipped": 390,
-   "seconds": 376.6
+   "seconds": 187.8
   },
   "bakery": {
    "name": "제과점",
    "ok": true,
-   "fetched": 516,
+   "fetched": 517,
    "temporary_skipped": 42,
-   "seconds": 125.9
+   "seconds": 9.6
   },
   "semas": {
    "name": "상가정보(소상공인)",
    "ok": true,
    "fetched": 20601,
-   "seconds": 37.6
+   "seconds": 16.4
   },
   "bjd": {
    "name": "법정동 경계(브이월드)",
